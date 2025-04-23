@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "chat", "chat\chat.csproj", "{62B3FBA5-1E21-4924-A269-FB95252DD26F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "chatlib", "chatlib\chatlib.csproj", "{1BF6E6B0-6C0F-4700-A246-403D4D532203}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "server", "server\server.csproj", "{644F146A-7763-44B4-92AE-CA316AF4CF5D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{62B3FBA5-1E21-4924-A269-FB95252DD26F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62B3FBA5-1E21-4924-A269-FB95252DD26F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62B3FBA5-1E21-4924-A269-FB95252DD26F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62B3FBA5-1E21-4924-A269-FB95252DD26F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BF6E6B0-6C0F-4700-A246-403D4D532203}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BF6E6B0-6C0F-4700-A246-403D4D532203}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BF6E6B0-6C0F-4700-A246-403D4D532203}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BF6E6B0-6C0F-4700-A246-403D4D532203}.Release|Any CPU.Build.0 = Release|Any CPU
+		{644F146A-7763-44B4-92AE-CA316AF4CF5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{644F146A-7763-44B4-92AE-CA316AF4CF5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{644F146A-7763-44B4-92AE-CA316AF4CF5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{644F146A-7763-44B4-92AE-CA316AF4CF5D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8D99800D-5A1F-431F-8291-BC1812B030ED}
+	EndGlobalSection
+EndGlobal
