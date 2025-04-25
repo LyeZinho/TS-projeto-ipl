@@ -1,0 +1,8 @@
+/*
+    Github: https://github.com/LyeZinho/TS-projeto-ipl
+    Para rodar tanto o cliente quanto o servidor. 
+    deve-se ir aos diretorios. 
+    \chat\server\bin\Debug\net8.0\server.exe
+    \chat\chat\bin\Debug\net8.0-windows\chat.exe
+
+*/

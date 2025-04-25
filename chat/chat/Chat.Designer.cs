@@ -77,6 +77,7 @@
             btn_AddFriend.TabIndex = 4;
             btn_AddFriend.Text = "Adcionar";
             btn_AddFriend.UseVisualStyleBackColor = true;
+            btn_AddFriend.Click += btn_AddFriend_Click;
             // 
             // Chat
             // 

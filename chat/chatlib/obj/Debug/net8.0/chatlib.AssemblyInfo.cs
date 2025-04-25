@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("chatlib")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f1217303fc82623ea17450a12214aa766bbd1db7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e8b77ac8820265875fd5674745029a1a0ff26c9f")]
 [assembly: System.Reflection.AssemblyProductAttribute("chatlib")]
 [assembly: System.Reflection.AssemblyTitleAttribute("chatlib")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

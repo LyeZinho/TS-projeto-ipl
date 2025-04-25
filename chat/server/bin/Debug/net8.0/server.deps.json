@@ -12,7 +12,8 @@
           "Microsoft.Graph": "5.77.0",
           "Newtonsoft.Json": "13.0.3",
           "WatsonWebsocket": "4.1.4",
-          "chatlib": "1.0.0"
+          "chatlib": "1.0.0",
+          "protoip": "0.0.0.0"
         },
         "runtime": {
           "server.dll": {}
@@ -716,6 +717,14 @@
             "fileVersion": "1.0.0.0"
           }
         }
+      },
+      "protoip/0.0.0.0": {
+        "runtime": {
+          "protoip.dll": {
+            "assemblyVersion": "0.0.0.0",
+            "fileVersion": "0.0.0.0"
+          }
+        }
       }
     }
   },
@@ -1189,6 +1198,11 @@
     },
     "chatlib/1.0.0": {
       "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "protoip/0.0.0.0": {
+      "type": "reference",
       "serviceable": false,
       "sha512": ""
     }

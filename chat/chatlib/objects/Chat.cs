@@ -41,8 +41,6 @@ namespace chatlib.objects
 
      Dados como:
      - usuario que enviou a mensagem (username)
-     - Porta ligada ao usuario
-     - Ip ligado ao usuario
 
     funções:
     - Adicionar usuario a lista
@@ -58,11 +56,19 @@ namespace chatlib.objects
         public List<User> Users { get; set; } = new List<User>();
         public List<Chat> Chats { get; set; } = new List<Chat>();
 
+        /// <summary>
+        /// Adiciona um usuario a lista de usuarios
+        /// </summary>
+        /// <param name="user"></param>
         public void AddUser(User user)
         {
             Users.Add(user);
         }
 
+        /// <summary>
+        /// Remove um usuario da lista de usuarios
+        /// </summary>
+        /// <param name="username"></param>
         public void RemoveUser(string username)
         {
             // u == usernanme -> u.Username == username
@@ -73,24 +79,39 @@ namespace chatlib.objects
             }
         }
 
+        /// <summary>
+        /// Busca um usuario na lista de usuarios
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
         public User? GetUser(string username)
         {
             // u = usernanme -> u.Username == username
             return Users.FirstOrDefault(u => u.Username == username);
         }
 
+        /// <summary>
+        /// Busca um usuario na lista de usuarios
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public User? GetUser(int id)
         {
             // u = id -> u.Id == id
             return Users.FirstOrDefault(u => u.Id == id);
         }
 
+        /// <summary>
+        /// Retorna todos os usuarios
+        /// </summary>
+        /// <returns></returns>
         public List<User> GetAllUsers()
         {
             return Users;
         }
     }
 
+    // Representação dos chats
     public class Chat
     {
         public string? Type { get; set; } // "Chat", "FriendRequest", "FriendResponse", null = primeira mensagem de registro

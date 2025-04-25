@@ -4,7 +4,15 @@ using System.Text;
 using chatlib.objects;
 using System.Text.Json;
 
+
+
+
+
+
 /*
+ * EXEMPLOS DADOS PELA BIBLIOTECA ProtoIP
+ * de (JoaoAJMatos) https://github.com/JoaoAJMatos/ProtoIP
+ * 
 protoIP examples:
 
 using System;
@@ -278,6 +286,77 @@ Packet type from ProtoIP.DLL:
         return array;
     }
 
+
+Server ex:
+
+using ProtoIP;
+
+class ComplexServer : ProtoServer
+{
+      // Once the user makes a request, we can build the packet from the protoStream
+      // and respond accordingly
+      public override void OnRequest(int userID)
+      {
+            // Get the data from the ProtoStream and deserialize the packet
+            byte[] data = _clients[userID].GetDataAs<byte[]>();
+            Packet receivedPacket = Packet.Deserialize(data);
+
+            // Respond to PING packets
+            if (receivedPacket._GetType() == (int)Packet.Type.PING)
+            {
+                  Packet packet = new Packet(Packet.Type.PONG);
+                  Send(packet.Serialize(), userID);
+            }
+      }
+}
+
+class Program 
+{
+      const int PORT = 1234;
+
+      static void Main()
+      {
+            // Create the server and start it
+            ComplexServer server = new ComplexServer(PORT);
+            server.Start();
+      }
+}
+
+
+client ex:
+
+using ProtoIP;
+
+class ComplexClient : ProtoClient 
+{
+      public override void OnReceive() 
+      {
+            string data = _protoStream.GetDataAs<string>();
+            Console.WriteLine(data);
+      }
+}
+
+class Program 
+{
+      static void Main() 
+      {
+            // Create a new ComplexClient object
+            ComplexClient client = new ComplexClient();
+
+            // Connect to the server
+            client.Connect("1.1.1.1", 1234);
+
+            // Send a string to the server
+            client.Send("Hello World!");
+
+            // Receive the response
+            // The OnReceive() method will be called
+            client.Receive();
+
+            // Disconnect from the server
+            client.Disconnect();
+      }
+}
 */
 
 // WS server e client
@@ -289,17 +368,19 @@ namespace chatlib.server
     public class ChatServer : ProtoServer
     {
         private UserManager _userManager; // Gerenciador de usuarios
+        private int _port; // Porta do servidor
 
-        public ChatServer(string ip, int port, bool ssl = false)
+        public ChatServer(int port)
         {
             // Cria o servidor e inicia a escuta na porta especificada
             _userManager = new UserManager();
+            _port = port;
         }
 
         public void Start()
         {
             // Inicia o servidor
-            Start(8080);
+            Start(_port);
         }
 
         public byte[] StringToByteArr(string str)
@@ -307,6 +388,7 @@ namespace chatlib.server
             // Converte uma string para um array de bytes
             return Encoding.UTF8.GetBytes(str);
         }
+
 
         public override void OnRequest(int userID)
         {
@@ -328,11 +410,15 @@ namespace chatlib.server
             */
 
             // Deserializa o pacote recebido
+            Console.WriteLine($"Recebido pacote do usuario {userID}");
+
+            // Atualmente possui um erro nesta parte.
             var packet = AssembleReceivedDataIntoPacket(userID);
             var packetType = packet._GetType();
             var packetData = packet.GetDataAs<string>();
             var packetJson = JsonSerializer.Deserialize<Packet>(packetData);
 
+            // Deserializa o pacote JSON JSON -> Dictionary
             var packetDict = JsonSerializer.Deserialize<Dictionary<string, object>>(packetData);
             var packetMessageTypeStr = packetDict["messagetype"].ToString() ?? string.Empty;
             var packetSender = packetDict["sender"].ToString() ?? string.Empty;
@@ -352,6 +438,7 @@ namespace chatlib.server
                 || string.IsNullOrEmpty(packetTimestamp)
             )
             {
+                // Verifica se o pacote recebido é válido
                 throw new Exception("Recebido pacote inválido");
             }
 
@@ -370,10 +457,12 @@ namespace chatlib.server
                     // Busca o usuário que deseja adicionar comoo amigo e retorna a chave pública do mesmo
                     var friendUsername = packetDict["friendUsername"].ToString() ?? string.Empty;
                     var friendPublicKey = packetDict["friendPublicKey"].ToString() ?? string.Empty;
+                    // Verifica se o usuário existe
                     var friendUser = _userManager.GetUser(friendUsername);
 
                     if (friendUser != null)
                     {
+                        // Cria um novo usuário com os dados do amigo
                         var Payload = new
                         {
                             friendUsername = friendUser.Username,
@@ -382,6 +471,7 @@ namespace chatlib.server
                             timestamp = DateTime.UtcNow.ToString("o"),
                         };
 
+                        // Envia o pacote para o usuário emisor, contendo os dados do amigo (chave pública)
                         Send(StringToByteArr(JsonSerializer.Serialize(Payload)), userID);
                     }
                     else
@@ -390,12 +480,16 @@ namespace chatlib.server
                     }
 
                     break;
+                // Case ping
+                case "ping":
+                    // Envia um pacote de resposta para o usuário // testes
+                    var pingPacket = new Packet(Packet.Type.PONG);
+                    Console.WriteLine($"Enviando pacote PONG para o usuario {userID}");
+                    Send(Packet.Serialize(pingPacket), userID);
+                    break;
                 default:
                     throw new Exception("Tipo de pacote desconhecido");
             }             
         }
     }
-
-
-    
 }

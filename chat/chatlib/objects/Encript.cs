@@ -7,7 +7,9 @@ public class RsaChatCrypto
     // Gera um novo par de chaves RSA (2048 bits)
     public static (byte[] publicKey, byte[] privateKey) GerarParDeChaves()
     {
+        // Cria um novo par de chaves RSA
         using RSA rsa = RSA.Create(2048);
+        // Exporta a chave pública no formato SubjectPublicKeyInfo
         byte[] publicKey = rsa.ExportSubjectPublicKeyInfo();
         byte[] privateKey = rsa.ExportPkcs8PrivateKey();
         return (publicKey, privateKey);
@@ -16,8 +18,11 @@ public class RsaChatCrypto
     // Encripta uma mensagem usando a chave pública (formato SubjectPublicKeyInfo)
     public static byte[] Encriptar(string mensagem, byte[] chavePublica)
     {
+        // Cria um novo objeto RSA e importa a chave pública
         using RSA rsa = RSA.Create();
+        // Importa a chave pública no formato SubjectPublicKeyInfo
         rsa.ImportSubjectPublicKeyInfo(chavePublica, out _);
+        // Transforma a mensagem em bytes e a encripta
         byte[] dados = Encoding.UTF8.GetBytes(mensagem);
         return rsa.Encrypt(dados, RSAEncryptionPadding.Pkcs1);
     }
@@ -33,6 +38,9 @@ public class RsaChatCrypto
 }
 
 /*
+
+Funciona com encriptação RSA.
+
  Guia
 
         // Usuário B gera suas chaves

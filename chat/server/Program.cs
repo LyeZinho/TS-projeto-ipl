@@ -12,18 +12,11 @@ namespace chatserver
         public static void Main(string[] args)
         {
             // Cria e inicia o servidor
-            var server = new ChatServer("127.0.0.1", 3000, false);
-            server.Start();
-
-            Console.WriteLine("Servidor iniciado. insira shutdown para parar o servidor.");
-            string? command = Console.ReadLine();
-            while (command != "shutdown")
-            {
-                Console.WriteLine(">");
-                command = Console.ReadLine();
-            }
-            server.Stop();
-            Console.WriteLine("Servidor parado.");
+            var chatServer = new ChatServer(5000);
+            Console.WriteLine("Servidor iniciado na porta 5000.");
+            chatServer.Start();
+            Console.ReadKey();
+            chatServer.Stop();
         }
     }
 }
