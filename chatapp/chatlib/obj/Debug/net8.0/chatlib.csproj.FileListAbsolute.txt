@@ -1,0 +1,12 @@
+E:\git\TS-projeto-ipl\chatapp\chatlib\bin\Debug\net8.0\chatlib.deps.json
+E:\git\TS-projeto-ipl\chatapp\chatlib\bin\Debug\net8.0\chatlib.dll
+E:\git\TS-projeto-ipl\chatapp\chatlib\bin\Debug\net8.0\chatlib.pdb
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\chatlib.GeneratedMSBuildEditorConfig.editorconfig
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\chatlib.AssemblyInfoInputs.cache
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\chatlib.AssemblyInfo.cs
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\chatlib.csproj.CoreCompileInputs.cache
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\chatlib.sourcelink.json
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\chatlib.dll
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\refint\chatlib.dll
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\chatlib.pdb
+E:\git\TS-projeto-ipl\chatapp\chatlib\obj\Debug\net8.0\ref\chatlib.dll
