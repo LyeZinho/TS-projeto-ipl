@@ -3,7 +3,10 @@ E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\chatapp-server.dep
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\chatapp-server.runtimeconfig.json
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\chatapp-server.dll
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\chatapp-server.pdb
+E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\chatlib.dll
+E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\ProtocolSI.dll
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\protoip.dll
+E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\chatlib.pdb
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\obj\Debug\net8.0\chatapp-server.csproj.AssemblyReference.cache
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\obj\Debug\net8.0\chatapp-server.GeneratedMSBuildEditorConfig.editorconfig
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\obj\Debug\net8.0\chatapp-server.AssemblyInfoInputs.cache
@@ -16,6 +19,3 @@ E:\git\TS-projeto-ipl\chatapp\chatapp-server\obj\Debug\net8.0\refint\chatapp-ser
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\obj\Debug\net8.0\chatapp-server.pdb
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\obj\Debug\net8.0\chatapp-server.genruntimeconfig.cache
 E:\git\TS-projeto-ipl\chatapp\chatapp-server\obj\Debug\net8.0\ref\chatapp-server.dll
-E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\ProtocolSI.dll
-E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\chatlib.dll
-E:\git\TS-projeto-ipl\chatapp\chatapp-server\bin\Debug\net8.0\chatlib.pdb

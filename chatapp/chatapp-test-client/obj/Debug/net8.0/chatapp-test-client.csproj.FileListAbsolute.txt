@@ -3,7 +3,10 @@ E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\chatapp-test-
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\chatapp-test-client.runtimeconfig.json
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\chatapp-test-client.dll
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\chatapp-test-client.pdb
+E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\chatlib.dll
+E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\ProtocolSI.dll
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\protoip.dll
+E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\chatlib.pdb
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\obj\Debug\net8.0\chatapp-test-client.csproj.AssemblyReference.cache
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\obj\Debug\net8.0\chatapp-test-client.GeneratedMSBuildEditorConfig.editorconfig
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\obj\Debug\net8.0\chatapp-test-client.AssemblyInfoInputs.cache
@@ -16,6 +19,3 @@ E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\obj\Debug\net8.0\refint\chatap
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\obj\Debug\net8.0\chatapp-test-client.pdb
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\obj\Debug\net8.0\chatapp-test-client.genruntimeconfig.cache
 E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\obj\Debug\net8.0\ref\chatapp-test-client.dll
-E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\ProtocolSI.dll
-E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\chatlib.dll
-E:\git\TS-projeto-ipl\chatapp\chatapp-test-client\bin\Debug\net8.0\chatlib.pdb
