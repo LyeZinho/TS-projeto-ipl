@@ -1,4 +1,8 @@
-﻿using System.Text.Json;
+﻿using System.IO.Compression;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace chatlib
@@ -13,9 +17,11 @@ namespace chatlib
         private string PrivateKeyEncrypted = string.Empty; // Inicializado para evitar CS8618
         private string Salt = string.Empty; // Inicializado para evitar CS8618
         public string UniqueId;
+        TcpClient Client { get; set; } = new TcpClient(); // Cliente TCP para conexão com o servidor
 
         // Builders para definir os valores 
 
+        #region Builders
         public User SetPrivateKey(string privateKey)
         {
             if (string.IsNullOrEmpty(privateKey))
@@ -80,6 +86,33 @@ namespace chatlib
             return this;
         }
 
+        public User SetClient(TcpClient client)
+        {
+            if (client == null)
+                throw new ArgumentNullException(nameof(client), "O cliente não pode ser nulo.");
+            Client = client;
+            return this;
+        }
+
+        public User SetClient(string ip, int port)
+        {
+            // Método para definir o cliente TCP com IP e porta
+            if (string.IsNullOrEmpty(ip))
+                throw new ArgumentException("O IP não pode ser nulo ou vazio.");
+            if (port <= 0 || port > 65535)
+                throw new ArgumentOutOfRangeException(nameof(port), "A porta deve estar entre 1 e 65535.");
+            Client = new TcpClient(ip, port);
+            return this;
+        }
+
+        public TcpClient GetClient()
+        {
+            // Método para obter o cliente TCP
+            if (Client == null)
+                throw new InvalidOperationException("O cliente não foi definido.");
+            return Client;
+        }
+
         public User Build()
         {
             // Método para construir o objeto User após definir todos os valores necessários
@@ -95,8 +128,89 @@ namespace chatlib
             //    throw new InvalidOperationException("Todas as chaves e salt devem ser definidos antes de construir o objeto User.");
             return this;
         }
+        #endregion
+
+        public string GetPasswordHash()
+        {
+            // Método para obter o hash da senha
+            if (string.IsNullOrEmpty(passwordHash))
+                throw new InvalidOperationException("A senha não foi definida.");
+            return passwordHash;
+        }
+
+        public string GetPublicKey()
+        {
+            // Método para obter a chave pública
+            if (string.IsNullOrEmpty(PublicKey))
+                throw new InvalidOperationException("A chave pública não foi definida.");
+            return PublicKey;
+        }
+
+        public string GetPrivateKey()
+        {
+            // Método para obter a chave privada
+            if (string.IsNullOrEmpty(PrivateKey))
+                throw new InvalidOperationException("A chave privada não foi definida.");
+            return PrivateKey;
+        }
+
+        public string GetPublicKeyEncrypted()
+        {
+            // Método para obter a chave pública criptografada
+            if (string.IsNullOrEmpty(PublicKeyEncrypted))
+                throw new InvalidOperationException("A chave pública criptografada não foi definida.");
+            return PublicKeyEncrypted;
+        }
+
+        public string GetPrivateKeyEncrypted()
+        {
+            // Método para obter a chave privada criptografada
+            if (string.IsNullOrEmpty(PrivateKeyEncrypted))
+                throw new InvalidOperationException("A chave privada criptografada não foi definida.");
+            return PrivateKeyEncrypted;
+        }
+
+        public string GetSalt()
+        {
+            // Método para obter o salt
+            if (string.IsNullOrEmpty(Salt))
+                throw new InvalidOperationException("O salt não foi definido.");
+            return Salt;
+        }
 
         public User() { } // Construtor padrão para permitir a criação de instâncias sem parâmetros
+    }
+
+    public class ValidationSession
+    {
+        // Essa classe é usada para validar uma sessão de usuário
+        public int Id { get; set; } // ID da sessão, necessário para Entity Framework
+        public string Username { get; set; } = string.Empty; // Inicializado para evitar CS8618
+        public string UniqueId { get; set; } = string.Empty; // Inicializado para evitar CS8618
+        public string SessionId { get; set; } = string.Empty; // Inicializado para evitar CS8618
+        public string PublicKey { get; set; } = string.Empty; // Inicializado para evitar CS8618s
+        public string AttemptUsername { get; set; } = string.Empty; // Inicializado para evitar CS8618
+        public string AttemptPassword { get; set; } = string.Empty; // Inicializado para evitar CS8618
+        public DateTime createdAt { get; set; } = DateTime.UtcNow; // Data de criação da sessão, inicializada para evitar CS8618
+        public DateTime expiration { get; set; } = DateTime.UtcNow.AddDays(1); // Data de expiração da sessão, inicializada para evitar CS8618
+    }
+
+    public class MessageDataClient
+    {
+        public int Id { get; set; } // ID da mensagem, necessário para Entity Framework
+        public string From { get; set; } = string.Empty; // Inicializado para evitar CS8618
+        public string To { get; set; } = string.Empty; // Inicializado para evitar CS8618
+        public string MessageText { get; set; } = string.Empty; // Inicializado para evitar CS8618
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow; // Data e hora do envio da mensagem, inicializada para evitar CS8618
+    }
+
+    public class Friend
+    {
+        public string Username { get; set; } = string.Empty; // Nome de usuário do amigo, inicializado para evitar CS8618
+        public string SelfUsername { get; set; } = string.Empty; // Nome de usuário do próprio usuário, inicializado para evitar CS8618
+        public string UniqueId { get; set; } = string.Empty; // ID único do amigo, inicializado para evitar CS8618
+        public string PublicKey { get; set; } = string.Empty; // Chave pública do amigo, inicializado para evitar CS8618
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Data de criação do amigo, inicializada para evitar CS8618
     }
 
 
@@ -169,6 +283,52 @@ namespace chatlib
             return Users[userName];
         }
 
+        public User GetUserByAdress(string ip, int port)
+        {
+            // Obtém um usuário pelo endereço IP e porta do cliente
+            if (string.IsNullOrEmpty(ip) || port <= 0 || port > 65535)
+                throw new ArgumentException("IP ou porta inválidos.");
+            // Percorre o dicionário de usuários para encontrar o usuário com o cliente correspondente
+            foreach (var user in Users.Values)
+            {
+                if (user.GetClient().Client.RemoteEndPoint is IPEndPoint remoteEndPoint &&
+                    remoteEndPoint.Address.ToString() == ip && remoteEndPoint.Port == port)
+                {
+                    return user;
+                }
+            }
+            throw new KeyNotFoundException("Usuário não encontrado pelo endereço IP e porta.");
+        }
+
+        // Retorna uma conexão TCP para o usuário especificado
+        public TcpClient GetTcpClient(string userName)
+        {
+            // Obtém o cliente TCP de um usuário pelo nome de usuário
+            if (string.IsNullOrEmpty(userName))
+                throw new ArgumentException("O nome do usuário não pode ser nulo ou vazio.");
+            // Verifica se o usuário existe no dicionário de usuários
+            if (!Users.ContainsKey(userName))
+                throw new KeyNotFoundException("Usuário não encontrado.");
+            // Retorna o cliente TCP do usuário
+            return Users[userName].GetClient();
+        }
+
+        public User GetUserByUniqueId(string uniqueId)
+        {
+            // Obtém um usuário pelo ID único
+            if (string.IsNullOrEmpty(uniqueId))
+                throw new ArgumentException("O ID único não pode ser nulo ou vazio.");
+            // Percorre o dicionário de usuários para encontrar o usuário com o ID único correspondente
+            foreach (var user in Users.Values)
+            {
+                if (user.UniqueId == uniqueId)
+                {
+                    return user;
+                }
+            }
+            throw new KeyNotFoundException("Usuário não encontrado pelo ID único.");
+        }
+
         public void RemoveUser(string userName)
         {
             // Remove um usuário do sistema, incluindo sua lista de amigos
@@ -201,6 +361,18 @@ namespace chatlib
             FriendsList[originUser].RemoveAll(f => f.DestinationUser == destinationUser);
         }
 
+        public User GetUserByUsername(string userna)
+        {
+            // Obtém um usuário pelo nome de usuário
+            if (string.IsNullOrEmpty(userna))
+                throw new ArgumentException("O nome do usuário não pode ser nulo ou vazio.");
+            // Verifica se o usuário existe no dicionário de usuários
+            if (!Users.ContainsKey(userna))
+                throw new KeyNotFoundException("Usuário não encontrado.");
+            // Retorna o usuário correspondente ao nome de usuário
+            return Users[userna];
+        }
+
         public List<User> GetAllUsers()
         {
             // Retorna uma lista de todos os usuários no sistema
@@ -212,6 +384,7 @@ namespace chatlib
             Users.Clear();
             FriendsList.Clear();
         }
+
 
         public Connections() { }
     }
@@ -242,13 +415,80 @@ namespace chatlib
         public Payload() { }
     }
 
+    public class MessageData
+    {
+        public string Message { get; set; }
+        public string From { get; set; }
+        public string To { get; set; }
+    }
+
+    public class FriendRequestData
+    {
+        public string From { get; set; }
+        public string To { get; set; }
+        public string UniqueId { get; set; } // ID único do usuário que está enviando o pedido de amizade
+        public string SelfPublicKey { get; set; }
+    }
+
+    public class FriendReplyData
+    {
+        public string From { get; set; }
+        public string To { get; set; }
+        public bool Accepted { get; set; }
+        public string SelfPublicKey { get; set; } // Caso não seja aceito, self public key e vazio
+        public string UniqueId { get; set; } // ID único do usuário que está respondendo ao pedido de amizade
+    }
+
+    public class ConnectionData
+    {
+        public string Username { get; set; }
+        public string UniqueId { get; set; }
+    }
+
+    public class clientConnection
+    {
+        public string Username { get; set; }
+        public string UniqueId { get; set; }
+        public string address { get; set; } // Endereço IP do cliente
+        public int Port { get; set; } // Porta do cliente
+        public TcpClient TcpClient { get; set; } // Cliente TCP associado
+    }
+
+
     public class SerializationHelper
     {
+        /*
+         Elimina o problema de serialização de JSONs com caracteres de controle e nulos.
+         */
+        public static byte[] CompressJson(string json)
+        {
+            var jsonBytes = Encoding.UTF8.GetBytes(json);
+
+            using var output = new MemoryStream();
+            using (var gzip = new GZipStream(output, CompressionMode.Compress))
+            {
+                gzip.Write(jsonBytes, 0, jsonBytes.Length);
+            }
+
+            return output.ToArray();
+        }
+
+        public static string DecompressJson(byte[] compressed)
+        {
+            using var input = new MemoryStream(compressed);
+            using var gzip = new GZipStream(input, CompressionMode.Decompress);
+            using var reader = new StreamReader(gzip, Encoding.UTF8);
+
+            return reader.ReadToEnd();
+        }
+
+
         public static string Serialize(Payload payload)
         {
             // Serializa um objeto Payload para uma string JSON
             return System.Text.Json.JsonSerializer.Serialize(payload);
         }
+
         public static Payload Deserialize(string json)
         {
             // Deserializa um objeto Payload para uma string JSON
@@ -260,10 +500,14 @@ namespace chatlib
             // Converte um array de bytes em um objeto Payload
             if (data == null || data.Length == 0)
                 throw new ArgumentNullException(nameof(data), "Os dados não podem ser nulos ou vazios.");
-            // Converte o array de bytes em uma string JSON e desserializa para um objeto Payload
-            string json = System.Text.Encoding.UTF8.GetString(data);
+            // Decomprime o array de bytes para obter a string JSON
+            string json = DecompressJson(data);
             // Verifica se a string JSON é nula ou vazia
-            return Deserialize(json);
+            using var output = new MemoryStream();
+            if (string.IsNullOrEmpty(json))
+                throw new InvalidOperationException("A string JSON não pode ser nula ou vazia.");
+            // Desserializa a string JSON para um objeto Payload
+            return Deserialize(json) ?? throw new InvalidOperationException("Falha ao desserializar o JSON para Payload.");
         }
 
         public byte[] PayloadToByte(Payload payload)
@@ -273,111 +517,8 @@ namespace chatlib
                 throw new ArgumentNullException(nameof(payload), "O payload não pode ser nulo.");
             // Serializa o objeto Payload para uma string JSON e converte para um array de bytes
             string json = Serialize(payload);
-            return System.Text.Encoding.UTF8.GetBytes(json);
-        }
-
-        public static string NormalizeJson(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw))
-                throw new ArgumentException("Input string is null or empty.");
-
-            // Remove caracteres de controle e nulos
-            var cleaned = Regex.Replace(raw, @"[\u0000-\u001F]+", string.Empty);
-
-            // Tenta analisar diretamente a string limpa
-            try
-            {
-                using var doc = JsonDocument.Parse(cleaned);
-                return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions
-                {
-                    WriteIndented = false,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                });
-            }
-            catch (JsonException)
-            {
-                // Fallback para o método de recuperação caso o parse direto falhe
-            }
-
-            // Busca a propriedade "Type" como ponto de referência
-            int typeIndex = cleaned.IndexOf("\"Type\"", StringComparison.Ordinal);
-            if (typeIndex == -1)
-                throw new FormatException("JSON root object not found: missing \"Type\" property.");
-
-            // Encontra a posição do primeiro '{' válido antes de "Type"
-            int startIndex = FindJsonStart(cleaned, typeIndex);
-
-            // Extrai o objeto JSON válido
-            string json = ExtractValidJsonObject(cleaned, startIndex);
-
-            // Re-serializa para garantir formato consistente
-            try
-            {
-                using var doc = JsonDocument.Parse(json);
-                return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions
-                {
-                    WriteIndented = false,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                });
-            }
-            catch (JsonException ex)
-            {
-                throw new FormatException("Failed to parse normalized JSON content.", ex);
-            }
-        }
-
-        private static int FindJsonStart(string input, int typeIndex)
-        {
-            // Procura o '{' mais próximo antes de "Type"
-            int braceIndex = input.LastIndexOf('{', typeIndex);
-
-            if (braceIndex != -1)
-            {
-                return braceIndex;
-            }
-
-            // Se não encontrou '{', usa a posição de "Type" como referência
-            // Verifica se há uma aspa antes de "Type"
-            int quoteIndex = input.LastIndexOf('"', typeIndex - 1);
-
-            if (quoteIndex == -1)
-            {
-                throw new FormatException("Invalid JSON structure: no opening brace or quote found.");
-            }
-
-            return quoteIndex;
-        }
-
-        private static string ExtractValidJsonObject(string input, int startIndex)
-        {
-            int openBraces = 0;
-            bool inString = false;
-
-            for (int i = startIndex; i < input.Length; i++)
-            {
-                char current = input[i];
-
-                // Gerencia contexto de strings
-                if (current == '"' && (i == 0 || input[i - 1] != '\\'))
-                {
-                    inString = !inString;
-                }
-
-                // Conta braces apenas fora de strings
-                if (!inString)
-                {
-                    if (current == '{') openBraces++;
-                    if (current == '}') openBraces--;
-
-                    // Objeto completo encontrado
-                    if (openBraces == 0)
-                    {
-                        return input.Substring(startIndex, i - startIndex + 1);
-                    }
-                }
-            }
-
-            throw new FormatException("Unbalanced JSON: object not closed properly.");
+            // Comprime a string JSON para reduzir o tamanho do array de bytes e não conter caracteres de controle
+            return CompressJson(json);
         }
 
 
@@ -390,15 +531,24 @@ namespace chatlib
             if (buffer == null || buffer.Length == 0)
                 throw new ArgumentNullException(nameof(buffer), "O buffer não pode ser nulo ou vazio.");
             // Converte o array de bytes em uma string JSON
-            string json = System.Text.Encoding.UTF8.GetString(buffer).TrimEnd('\0');
+            // Descomprime o array de bytes para obter a string JSON
+            string json = DecompressJson(buffer);
             // Verifica se a string JSON é nula ou vazia
             if (string.IsNullOrEmpty(json))
                 throw new InvalidOperationException("A string JSON não pode ser nula ou vazia.");
-            // Normaliza a string JSON para remover caracteres extras
-            json = NormalizeJson(json);
-
             // Desserializa a string JSON para um objeto Payload
             return Deserialize(json);
+        }
+
+        public object Deserialize<T>(string? v)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T DeserializeData<T>(string json)
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<T>(json)
+                ?? throw new InvalidOperationException("Falha na desserialização.");
         }
     }
 
@@ -408,8 +558,8 @@ namespace chatlib
         MESSAGE,
         FRIENDADD,
         FRIENDREMOVE,
-        LOGIN,
-        REGISTER,
+        FRIENDREPLY,
+        FRIENDREQUEST,
         ACK,
         EOT // End of Transmission
     }

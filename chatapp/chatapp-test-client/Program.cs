@@ -9,17 +9,10 @@ class Client
 {
     private const int PORT = 10000;
 
-    public void SendConnectionRequest(NetworkStream stream, ProtocolSI protocol)
+    public void SendConnectionRequest(NetworkStream stream, ProtocolSI protocol, Payload payload)
     {
         // Envia um payload de conexão
-        Payload payload = new Payload { Type = TypePayload.CONNECT,
-        Data = new
-        {
-            Username = "usuario1", // Nome do usuário que está se conectando
-            UniqueId = Guid.NewGuid().ToString() // ID único para o usuário
-        },
-            Timestamp = DateTime.UtcNow.ToString("o") // Formato ISO 8601
-        };
+        
         SerializationHelper helper = new SerializationHelper();
 
         byte[] packet = protocol.Make(ProtocolSICmdType.DATA, helper.PayloadToByte(payload));
@@ -34,6 +27,33 @@ class Client
         return System.Text.Encoding.UTF8.GetString(input).TrimEnd('\0');
     }
 
+    public void ProcessPayload(Payload payload)
+    {
+        if (payload.Type == TypePayload.MESSAGE)
+        {
+            Console.WriteLine($"Mensagem recebida de {payload.Data}: {payload.Data}");
+        }
+        else if (payload.Type == TypePayload.ACK)
+        {
+            Console.WriteLine("ACK recebido do servidor.");
+        }
+        else if (payload.Type == TypePayload.CONNECT)
+        {
+            Console.WriteLine("Conexão estabelecida com o servidor.");
+        }
+        else
+        {
+            Console.WriteLine("Tipo de payload desconhecido.");
+        }
+    }
+
+    public void ProcessMessage(Payload payload)
+    {
+        // Recebe o payload
+    }
+
+
+
     // CLIENTE
     static void Main()
     {
@@ -43,11 +63,24 @@ class Client
         ProtocolSI protocol = new ProtocolSI();
         SerializationHelper helper = new SerializationHelper();
 
+        string username = Console.ReadLine() ?? "defaultUser"; // Lê o nome de usuário do console ou usa um padrão
+        Payload payloadConn = new Payload
+        {
+            Type = TypePayload.CONNECT,
+            Data = new
+            {
+                Username = username, // Nome de usuário fornecido pelo usuário
+                UniqueId = Guid.NewGuid().ToString() // ID único para o usuário
+            },
+            Timestamp = DateTime.UtcNow.ToString("o") // Formato ISO 8601
+        };
+
         Console.WriteLine("Digite mensagens (ou 'sair' para terminar):");
         string? input;
 
         Client clientInstance = new Client();
-        //clientInstance.SendConnectionRequest(stream, protocol);
+        // Login
+        clientInstance.SendConnectionRequest(stream, protocol, payloadConn);
 
         // Thread para receber mensagens do servidor
         var receiveThread = new Thread(() =>
@@ -66,6 +99,7 @@ class Client
 
                             try
                             {
+                                Console.WriteLine("Buffer recebido");
                                 // Deserializa o payload recebido primeiro para string (motivo de teste)
                                 string receivedData = clientInstance.ByteArrToString(protocol.Buffer);
                                 Payload payload = helper.ReplyBufferToPayload(protocol.Buffer);
@@ -102,14 +136,16 @@ class Client
         // Loop principal para enviar mensagens
         while (!string.IsNullOrEmpty(input = Console.ReadLine()) && input != "sair")
         {
+            string target = Console.ReadLine() ?? "usuario2"; // Lê o destinatário da mensagem ou usa um padrão
+
             Payload payload = new Payload
             {
                 Type = TypePayload.MESSAGE,
                 Data = new
                 {
                     Message = input,
-                    From = "usuario1",
-                    To = "usuario2"
+                    From = username, // Nome de usuário fornecido pelo usuário
+                    To = target, // Destinatário da mensagem
                 },
                 Timestamp = DateTime.UtcNow.ToString("o")
             };
@@ -118,7 +154,7 @@ class Client
             stream.Write(packet, 0, packet.Length);
 
             // Espera por ACK
-            stream.Read(protocol.Buffer, 0, protocol.Buffer.Length);
+            //stream.Read(protocol.Buffer, 0, protocol.Buffer.Length);
         }
 
         // Envia EOT

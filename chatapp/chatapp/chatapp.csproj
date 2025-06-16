@@ -9,10 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EntityFramework" Version="6.5.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\chatlib\chatlib.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="ProtocolSI">
+      <HintPath>..\..\ProtocolSI.dll</HintPath>
+    </Reference>
     <Reference Include="protoip">
       <HintPath>C:\Users\pedro.DESKTOP-EI6JCR4\Documents\Github\TS-projeto-ipl\chat\server\protoip.dll</HintPath>
     </Reference>

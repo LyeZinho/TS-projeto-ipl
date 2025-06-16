@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "chatapp-test-client", "chat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "chatlib", "chatlib\chatlib.csproj", "{1E42D838-12F9-4586-B0E2-47E4337BCB05}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "api", "api\api.csproj", "{469676BB-0DAE-4409-9770-C2E325293B53}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{1E42D838-12F9-4586-B0E2-47E4337BCB05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E42D838-12F9-4586-B0E2-47E4337BCB05}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E42D838-12F9-4586-B0E2-47E4337BCB05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{469676BB-0DAE-4409-9770-C2E325293B53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{469676BB-0DAE-4409-9770-C2E325293B53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{469676BB-0DAE-4409-9770-C2E325293B53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{469676BB-0DAE-4409-9770-C2E325293B53}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

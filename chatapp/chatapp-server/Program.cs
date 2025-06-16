@@ -4,246 +4,305 @@ using System.Net.Sockets;
 using System.Threading;
 using EI.SI;
 using chatlib;
+using System.Text.Json;
 
 
 class Server
 {
     private const int PORT = 10000;
-    private readonly Connections connections = new Connections();
-    SerializationHelper helper = new SerializationHelper();
-    private object client;
-    NetworkStream stream = null!; // Inicializado como null, será atribuído no HandleClient
-    ProtocolSI protocol = new ProtocolSI();
-
-    // Lista de conexões ativas (não usada para conexões de users e sim para sockets)
-     private List<TcpClient> activeConnections = new List<TcpClient>();
+    private Connections connections = new Connections();
+    private SerializationHelper helper = new SerializationHelper();
+    private ProtocolSI protocol = new ProtocolSI();
 
     public static void Main()
     {
-        Server server = new Server();
-        server.Start();
-    }
-
-    // Tipos para deserialização/serialização de payloads
-    private class MessageData
-    {
-        public string Message { get; set; }
-        public string From { get; set; }
-        public string To { get; set; }
-    }
-
-    class ConnectionData
-    {
-        public string Username { get; set; }
-        public string UniqueId { get; set; }
+        new Server().Start();
     }
 
     public void Start()
     {
-        TcpListener listener = new TcpListener(IPAddress.Any, PORT);
+        var listener = new TcpListener(IPAddress.Any, PORT);
         listener.Start();
         Console.WriteLine("Servidor iniciado...");
 
         while (true)
         {
-            TcpClient client = listener.AcceptTcpClient();
+            var client = listener.AcceptTcpClient();
             Console.WriteLine("Cliente conectado: " + client.Client.RemoteEndPoint);
-            activeConnections.Add(client); // Adiciona o cliente à lista de conexões ativas
-            Thread thread = new Thread(() => HandleClient(client));
+            var thread = new Thread(() => HandleClient(client));
             thread.Start();
         }
     }
 
-    // SERVIDOR
     private void HandleClient(TcpClient client)
     {
-        // Método para lidar com a conexão do cliente
-        stream = client.GetStream();
-
-        // Lê o protocolo de conexão
-        while (protocol.GetCmdType() != ProtocolSICmdType.EOT)
+        var stream = client.GetStream();
+        try
         {
-            stream.Read(protocol.Buffer, 0, protocol.Buffer.Length);
-
-            switch (protocol.GetCmdType())
+            while (client.Connected)
             {
-                case ProtocolSICmdType.DATA:
+                // aguarda dados
+                int bytesRead = stream.Read(protocol.Buffer, 0, protocol.Buffer.Length);
+                if (bytesRead == 0)
+                {
+                    Console.WriteLine("Conexão fechada pelo cliente.");
+                    break;
+                }
+
+                if (protocol.GetCmdType() == ProtocolSICmdType.DATA)
+                {
                     Console.WriteLine("Recebido: " + protocol.GetStringFromData());
-                    Payload payload = new SerializationHelper().ByteToPayload(protocol.GetData());
-                    Console.WriteLine("Payload: " + payload.Type);
+                    var payload = helper.ByteToPayload(protocol.GetData());
                     try
                     {
-                        ProcessPayload(payload); // <- método de instância acessando estado interno
+                        ProcessPayload(payload, client, stream);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Erro: " + ex.Message);
+                        Console.WriteLine("Erro ao processar payload: " + ex.Message);
                     }
-                    stream.Write(protocol.Make(ProtocolSICmdType.ACK), 0, protocol.Make(ProtocolSICmdType.ACK).Length);
+                }
+                else if (protocol.GetCmdType() == ProtocolSICmdType.EOT)
+                {
+                    var ack = protocol.Make(ProtocolSICmdType.ACK);
+                    stream.Write(ack, 0, ack.Length);
                     break;
-
-                case ProtocolSICmdType.EOT:
-                    stream.Write(protocol.Make(ProtocolSICmdType.ACK), 0, protocol.Make(ProtocolSICmdType.ACK).Length);
-                    break;
+                }
             }
         }
-
-        stream.Close();
-        client.Close();
+        catch (Exception ex)
+        {
+            Console.WriteLine("Erro no cliente: " + ex.Message);
+        }
+        finally
+        {
+            stream.Close();
+            client.Close();
+        }
     }
 
-    public void ProcessPayload(Payload payload)
+    // Agora recebe também o TcpClient e o NetworkStream
+    public void ProcessPayload(Payload payload, TcpClient client, NetworkStream stream)
     {
-        if (payload == null) 
+        if (payload == null)
             throw new ArgumentNullException(nameof(payload));
+
         switch (payload.Type)
         {
             case TypePayload.CONNECT:
-                HandleConnect(payload);
+                HandleConnect(payload, client, stream);
                 break;
             case TypePayload.MESSAGE:
                 HandleMessage(payload);
                 break;
-            case TypePayload.FRIENDADD:
-                // Aqui você pode implementar a lógica para adicionar amigos
-                throw new NotImplementedException("Lógica de adição de amigos ainda não implementada.");
-            case TypePayload.FRIENDREMOVE:
-                // Aqui você pode implementar a lógica para remover amigos
-                throw new NotImplementedException("Lógica de remoção de amigos ainda não implementada.");
-            case TypePayload.LOGIN:
-                // Aqui você pode implementar a lógica de login
-                throw new NotImplementedException("Lógica de login ainda não implementada.");
+            case TypePayload.FRIENDREQUEST:
+                Console.WriteLine("Solicitação de amizade recebida: " + payload.Data);
+                HandleFriendRequest(payload);
+                break;
+            case TypePayload.FRIENDREPLY:
+                Console.WriteLine("Resposta à solicitação de amizade recebida: " + payload.Data);
+                HandleFriendReply(payload);
+                break;
             case TypePayload.ACK:
-                // Aqui você pode implementar a lógica de confirmação
                 Console.WriteLine("ACK recebido: " + payload.Data);
                 break;
             case TypePayload.EOT:
-                // Aqui você pode implementar a lógica de fim de transmissão
                 Console.WriteLine("Fim de transmissão recebido.");
                 break;
 
         }
     }
-    
-    
 
-    private void HandleConnect(Payload payload)
+    // Refatorado para receber TcpClient e Stream
+    private void HandleConnect(Payload payload, TcpClient client, NetworkStream stream)
     {
-        // Processa o payload de conexão
-        if (payload == null || payload.Data == null)
+        if (payload.Data == null)
             throw new ArgumentNullException(nameof(payload), "Payload de conexão inválido.");
-        // Converte o payload.Data para o tipo esperado (dynamic ou um tipo específico)
-        /*
-         Servidor iniciado...
-        Recebido: {"Type":0,"Data":{"Username":"usuario1","UniqueId":"f66f1390-5b2a-49c2-b4ca-2cb3df688d44"},"Timestamp":"2025-06-03T18:51:33.4064394Z"}
-        Payload: CONNECT
-        ValueKind = Object : "{"Username":"usuario1","UniqueId":"8dfa5532-1847-46c4-881e-0ab7d96c91a7"}" <- Deserializa o valor data dentro do payload
-        */
-        var connectionData = System.Text.Json.JsonSerializer.Deserialize<ConnectionData>(payload.Data.ToString() ?? string.Empty)
-            ?? throw new InvalidOperationException("Falha ao desserializar os dados de conexão.");
 
+        var data = JsonSerializer.Deserialize<ConnectionData>(payload.Data.ToString() ?? string.Empty)
+                   ?? throw new InvalidOperationException("Falha ao desserializar dados de conexão.");
 
-        ProtocolSI protocol = new ProtocolSI();
-        // Sends an ACK response to the client
+        // Cria o User com o TcpClient já associado
+        var user = new User()
+            .SetUsername(data.Username)
+            .SetUniqueId(data.UniqueId)
+            .SetClient(client)
+            .Build();
 
-        Payload responsePayload = new Payload
+        connections.AddUser(user);
+
+        // Envia ACK
+        var response = new Payload
         {
             Type = TypePayload.ACK,
             Data = "Conexão estabelecida com sucesso.",
-            Timestamp = DateTime.UtcNow.ToString("o") // ISO 8601 format
+            Timestamp = DateTime.UtcNow.ToString("o")
         };
+        var respBytes = helper.PayloadToByte(response);
 
-        // method to wrie back: byte[] packet = protocol.Make(ProtocolSICmdType.DATA, helper.PayloadToByte(payload));
-        byte[] responseData = new SerializationHelper().PayloadToByte(responsePayload);
-        byte[] packet = protocol.Make(ProtocolSICmdType.DATA, responseData);
-
-        User user = new User()
-            .SetUsername(connectionData.Username)
-            .SetUniqueId(connectionData.UniqueId)
-            .Build();
-
-        connections.AddUser(user); // Adiciona o usuário à lista de conexões
-
-        // Obtem o cliente conectado e envia o pacote de dados
-        if (stream != null && stream.CanWrite)
+        if (stream.CanWrite)
         {
-            stream.Write(packet, 0, packet.Length);
-            Console.WriteLine($"Conexão estabelecida com o usuário: {user.Username} (ID: {user.UniqueId})");
+            stream.Write(respBytes, 0, respBytes.Length);
+            Console.WriteLine($"[INFO] Usuário {user.Username} ({user.UniqueId}) conectado.");
         }
         else
         {
-            Console.WriteLine("Erro ao enviar resposta de conexão. O fluxo não está disponível.");
+            Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {user.UniqueId}.");
         }
     }
 
     private void HandleMessage(Payload payload)
     {
-        /*
-         * Exemplo de payload de mensagem:
-         {
-            type: "MESSAGE", -> 
-            data: {
-              message: "Olá, mundo!", -> A mensagem que será enviada para o usuário e estará encriptada.
-              from: "usuario1", -> O usuário que enviou a mensagem. (usa o de UniqueId)
-              to: "usuario2" -> O usuário que receberá a mensagem. (usa o de UniqueId)
-            },
-            timestamp: "" -> Timestamp do comando, usado para sincronização e controle de tempo.
-         }
-         */
-        // Processa o payload de mensagem
-        if (payload == null || payload.Data == null)
-            throw new ArgumentNullException(nameof(payload), "Payload de mensagem inválido.");
+        var msg = JsonSerializer.Deserialize<MessageData>(payload.Data.ToString() ?? string.Empty)
+                  ?? throw new InvalidOperationException("Falha ao desserializar dados de mensagem.");
 
-        // Converte o payload.Data para o tipo esperado (dynamic ou um tipo específico)
-        var messageData = System.Text.Json.JsonSerializer.Deserialize<MessageData>(payload.Data.ToString() ?? string.Empty)
-            ?? throw new InvalidOperationException("Falha ao desserializar os dados da mensagem.");
+        var sender = connections.GetUserByUsername(msg.From);
+        var recipient = connections.GetUserByUsername(msg.To);
 
-        // Get all tcp clients connected (not on connections i want to get all sockets)
-        foreach (var user in connections.GetAllUsers())
+        if (sender == null || recipient == null)
         {
-            Console.WriteLine($"Enviando mensagem para {user.Username}...");
+            Console.WriteLine("Remetente ou destinatário não encontrado.");
+            return;
         }
 
-
-        Console.WriteLine("Mensagem recebida: " + messageData.Message);
-
-        // Resposta de teste // Basicamente enviando a mensagem de volta para o usuário que enviou
-        Payload responsePayload = new Payload
+        var response = new Payload
         {
             Type = TypePayload.MESSAGE,
+            Data = new { message = msg.Message, from = msg.From, to = msg.To },
+            Timestamp = DateTime.UtcNow.ToString("o")
+        };
+        var respBytes = helper.PayloadToByte(response);
+
+        var tcp = recipient.GetClient();
+        if (tcp.Connected)
+        {
+            var rs = tcp.GetStream();
+            if (rs.CanWrite)
+            {
+                rs.Write(respBytes, 0, respBytes.Length);
+                Console.WriteLine($"Mensagem enviada para {recipient.Username}.");
+            }
+        }
+    }
+
+
+
+
+    private void HandleFriendRequest(Payload payload)
+    {
+        // Implementar lógica de solicitação de amizade
+
+        /*
+         Como vai funcionar:
+
+           1. O usuário envia uma solicitação de amizade com o nome do amigo e sua chave pública.
+           2. O servidor recebe a solicitação e verifica se o usuário existe.
+           3. Se o usuário existir, o servidor envia um payload de solicitação de amizade para o usuário. (contendo a chave pública do remetente)
+           4. O usuário recebe a solicitação e pode aceitar ou rejeitar.
+           5. Se aceitar, o servidor adiciona o usuário à lista de amigos e envia um payload de confirmação. (contendo a chave pública do recipiente)
+         */
+
+        if (payload.Data == null)
+            throw new ArgumentNullException(nameof(payload), "Payload de solicitação de amizade inválido.");
+        var data = JsonSerializer.Deserialize<FriendRequestData>(payload.Data.ToString() ?? string.Empty)
+                   ?? throw new InvalidOperationException("Falha ao desserializar dados de solicitação de amizade.");
+        var sender = connections.GetUserByUsername(data.From);
+        var recipient = connections.GetUserByUsername(data.To);
+        if (sender == null || recipient == null)
+        {
+            Console.WriteLine("Remetente ou destinatário não encontrado.");
+            return;
+        }
+        // Envia a solicitação de amizade para o destinatário
+        var response = new Payload
+        {
+            Type = TypePayload.FRIENDREQUEST,
             Data = new
             {
-                message = messageData.Message,
-                from = messageData.From,
-                to = messageData.To
+                from = data.From,
+                to = data.To,
+                selfPublicKey = data.SelfPublicKey
             },
-            Timestamp = DateTime.UtcNow.ToString("o") // Formato ISO 8601
+            Timestamp = DateTime.UtcNow.ToString("o")
         };
-
-        byte[] responseData = new SerializationHelper().PayloadToByte(responsePayload);
-
-        byte[] packet = protocol.Make(ProtocolSICmdType.DATA, responseData);
-
-        // Envia o pacote de dados para o usuário que enviou a mensagem
-        if (stream != null && stream.CanWrite)
+        var respBytes = helper.PayloadToByte(response);
+        var tcp = recipient.GetClient();
+        if (tcp.Connected)
         {
-            stream.Write(packet, 0, packet.Length);
-            Console.WriteLine($"Mensagem enviada para {messageData.To} de {messageData.From}: {messageData.Message}");
+            var rs = tcp.GetStream();
+            if (rs.CanWrite)
+            {
+                rs.Write(respBytes, 0, respBytes.Length);
+                Console.WriteLine($"Solicitação de amizade enviada de {data.From} para {data.To}.");
+            }
+            else
+            {
+                Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {recipient.Username}.");
+            }
         }
         else
         {
-            Console.WriteLine("Erro ao enviar mensagem. O fluxo não está disponível.");
+            Console.WriteLine($"[ERRO] Cliente {recipient.Username} não está conectado.");
         }
     }
 
-    private void HandleRegister(Payload payload)
+    private void HandleFriendReply(Payload payload)
     {
-        // Processa o payload de registro
-        /*
-         
-         */
+        // Implementar lógica de resposta à solicitação de amizade
+        if (payload.Data == null)
+            throw new ArgumentNullException(nameof(payload), "Payload de resposta à solicitação de amizade inválido.");
 
+        var data = JsonSerializer.Deserialize<FriendReplyData>(payload.Data.ToString() ?? string.Empty)
+                   ?? throw new InvalidOperationException("Falha ao desserializar dados de resposta à solicitação de amizade.");
+
+        var sender = connections.GetUserByUsername(data.From);
+        var recipient = connections.GetUserByUsername(data.To);
+
+        if (sender == null || recipient == null)
+        {
+            Console.WriteLine("Remetente ou destinatário não encontrado.");
+            return;
+        }
+        if (data.Accepted)
+        {
+            // Adiciona o remetente à lista de amigos do destinatário
+            connections.AddFriend(recipient.Username, sender.Username);
+            Console.WriteLine($"Amizade aceita entre {data.From} e {data.To}.");
+        }
+        else
+        {
+            Console.WriteLine($"Amizade rejeitada entre {data.From} e {data.To}.");
+        }
+        // Envia a resposta ao remetente
+        var response = new Payload
+        {
+            Type = TypePayload.FRIENDREPLY,
+            Data = new
+            {
+                from = data.From,
+                to = data.To,
+                accepted = data.Accepted,
+                selfPublicKey = data.SelfPublicKey
+            },
+            Timestamp = DateTime.UtcNow.ToString("o")
+        };
+
+        var respBytes = helper.PayloadToByte(response);
+
+        var tcp = sender.GetClient();
+        if (tcp.Connected)
+        {
+            var rs = tcp.GetStream();
+            if (rs.CanWrite)
+            {
+                rs.Write(respBytes, 0, respBytes.Length);
+                Console.WriteLine($"Resposta à solicitação de amizade enviada para {data.From}.");
+            }
+            else
+            {
+                Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {sender.Username}.");
+            }
+        }
     }
 
-    
 }
