@@ -100,197 +100,312 @@ namespace chatapp.data
 
         public DbSetup(SqliteConnection connection)
         {
-            using (var cmd = connection.CreateCommand())
+            try
             {
-                // Cria a tabela de usuários
-                cmd.CommandText = @"
-                    CREATE TABLE IF NOT EXISTS Users (
-                        Username TEXT PRIMARY KEY,
-                        PasswordHash TEXT NOT NULL,
-                        PrivateKey TEXT NOT NULL,
-                        PublicKey TEXT NOT NULL,
-                        PublicKeyEncrypted TEXT NOT NULL,
-                        PrivateKeyEncrypted TEXT NOT NULL,
-                        Salt TEXT NOT NULL,
-                        UniqueId TEXT NOT NULL
-                    );";
-                cmd.ExecuteNonQuery();
-                // Cria a tabela de mensagens
-                cmd.CommandText = @"
-                    CREATE TABLE IF NOT EXISTS Messages (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        ""From"" TEXT NOT NULL,
-                        ""To"" TEXT NOT NULL,
-                        MessageText TEXT NOT NULL,
-                        Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (""From"") REFERENCES Users(Username),
-                        FOREIGN KEY (""To"") REFERENCES Users(Username)
-                    );";
-                cmd.ExecuteNonQuery();
+                using (var cmd = connection.CreateCommand())
+                {
+                    // Cria a tabela de usuários
+                    cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS Users (
+                    Username TEXT PRIMARY KEY,
+                    PasswordHash TEXT NOT NULL,
+                    PrivateKey TEXT NOT NULL,
+                    PublicKey TEXT NOT NULL,
+                    PublicKeyEncrypted TEXT NOT NULL,
+                    PrivateKeyEncrypted TEXT NOT NULL,
+                    Salt TEXT NOT NULL,
+                    UniqueId TEXT NOT NULL
+                );";
+                    cmd.ExecuteNonQuery();
 
-                // Cria a tabela de amigos
-                cmd.CommandText = @"
-                    CREATE TABLE IF NOT EXISTS Friends (
-                        Username TEXT NOT NULL,
-                        SelfUsername TEXT NOT NULL,
-                        UniqueId TEXT NOT NULL,
-                        PublicKey TEXT NOT NULL,
-                        CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        PRIMARY KEY (Username, SelfUsername),
-                        FOREIGN KEY (SelfUsername) REFERENCES Users(Username)
-                    );";
-                cmd.ExecuteNonQuery();
+                    // Cria a tabela de amigos
+                    cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS Friends (
+                    Username TEXT NOT NULL,
+                    SelfUsername TEXT NOT NULL,
+                    UniqueId TEXT NOT NULL,
+                    PublicKey TEXT NOT NULL,
+                    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+                );";
+                    cmd.ExecuteNonQuery();
+
+                    // Cria a tabela de mensagens
+                    cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS Messages (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ""From"" TEXT NOT NULL,
+                    ""To"" TEXT NOT NULL,
+                    MessageText TEXT NOT NULL,
+                    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                );";
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Fecha a conexão
+                connection.Close();
             }
-
-            // Fecha a conexão
-            connection.Close();
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao configurar o banco de dados: {ex.Message}");
+                // Aqui você pode tratar o erro de forma mais específica, se necessário
+            }
         }
+
 
         // Crud User (o user é local logo só pode existir um único usuário)
         public void CreateUser(SqliteConnection connection, string username, string passwordHash, string privateKey, string publicKey, string publicKeyEncrypted, string privateKeyEncrypted, string salt, string uniqueId)
         {
-            using (var cmd = connection.CreateCommand())
+            try
             {
-                // Insere o usuário
-                cmd.CommandText = @"
+                using (var cmd = connection.CreateCommand())
+                {
+                    // Insere o usuário
+                    cmd.CommandText = @"
                     INSERT INTO Users (Username, PasswordHash, PrivateKey, PublicKey, PublicKeyEncrypted, PrivateKeyEncrypted, Salt, UniqueId)
                     VALUES ($username, $passwordHash, $privateKey, $publicKey, $publicKeyEncrypted, $privateKeyEncrypted, $salt, $uniqueId);";
-                cmd.Parameters.AddWithValue("$username", username);
-                cmd.Parameters.AddWithValue("$passwordHash", passwordHash);
-                cmd.Parameters.AddWithValue("$privateKey", privateKey);
-                cmd.Parameters.AddWithValue("$publicKey", publicKey);
-                cmd.Parameters.AddWithValue("$publicKeyEncrypted", publicKeyEncrypted);
-                cmd.Parameters.AddWithValue("$privateKeyEncrypted", privateKeyEncrypted);
-                cmd.Parameters.AddWithValue("$salt", salt);
-                cmd.Parameters.AddWithValue("$uniqueId", uniqueId);
-                cmd.ExecuteNonQuery();
-            }
+                    cmd.Parameters.AddWithValue("$username", username);
+                    cmd.Parameters.AddWithValue("$passwordHash", passwordHash);
+                    cmd.Parameters.AddWithValue("$privateKey", privateKey);
+                    cmd.Parameters.AddWithValue("$publicKey", publicKey);
+                    cmd.Parameters.AddWithValue("$publicKeyEncrypted", publicKeyEncrypted);
+                    cmd.Parameters.AddWithValue("$privateKeyEncrypted", privateKeyEncrypted);
+                    cmd.Parameters.AddWithValue("$salt", salt);
+                    cmd.Parameters.AddWithValue("$uniqueId", uniqueId);
+                    cmd.ExecuteNonQuery();
+                }
 
-            // Fecha a conexão
-            connection.Close();
+                // Fecha a conexão
+                connection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao criar usuário: {ex.Message}");
+                // Aqui você pode tratar o erro de forma mais específica, se necessário
+            }
         }
 
         // Busca o usuário 
         public User GetUser(SqliteConnection connection, string username)
         {
-            using (var cmd = connection.CreateCommand())
+            try
             {
-                cmd.CommandText = "SELECT * FROM Users WHERE Username = $username;";
-                cmd.Parameters.AddWithValue("$username", username);
-                using (var reader = cmd.ExecuteReader())
+                using (var cmd = connection.CreateCommand())
                 {
-                    if (reader.Read())
+                    cmd.CommandText = "SELECT * FROM Users WHERE Username = $username;";
+                    cmd.Parameters.AddWithValue("$username", username);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        User user = new User()
-                            .SetUsername(reader.GetString(0))
-                            .SetPasswordHash(reader.GetString(1))
-                            .SetPrivateKey(reader.GetString(2))
-                            .SetPublicKey(reader.GetString(3))
-                            .SetPublicKeyEncrypted(reader.GetString(4))
-                            .SetPrivateKeyEncrypted(reader.GetString(5))
-                            .SetSalt(reader.GetString(6))
-                            .SetUniqueId(reader.GetString(7));
+                        if (reader.Read())
+                        {
+                            User user = new User()
+                                .SetUsername(reader.GetString(0))
+                                .SetPasswordHash(reader.GetString(1))
+                                .SetPrivateKey(reader.GetString(2))
+                                .SetPublicKey(reader.GetString(3))
+                                .SetPublicKeyEncrypted(reader.GetString(4))
+                                .SetPrivateKeyEncrypted(reader.GetString(5))
+                                .SetSalt(reader.GetString(6))
+                                .SetUniqueId(reader.GetString(7));
 
-                        // Fecha a conexão
-                        connection.Close();
+                            // Fecha a conexão
+                            connection.Close();
 
-                        return user; // Usuário encontrado e retornado
+                            return user; // Usuário encontrado e retornado
+                        }
                     }
                 }
+                return null; // Usuário não encontrado
             }
-            return null; // Usuário não encontrado
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao buscar usuário: {ex.Message}");
+                // Aqui você pode tratar o erro de forma mais específica, se necessário
+                return null; // Retorna null em caso de erro
+            }
         }
 
         // Crud Message
         public void CreateMessage(SqliteConnection connection, string from, string to, string messageText)
         {
-            using (var cmd = connection.CreateCommand())
+            try
             {
-                cmd.CommandText = @"
-                    INSERT INTO Messages (From, To, MessageText)
-                    VALUES ($from, $to, $messageText);";
-                cmd.Parameters.AddWithValue("$from", from);
-                cmd.Parameters.AddWithValue("$to", to);
-                cmd.Parameters.AddWithValue("$messageText", messageText);
-                cmd.ExecuteNonQuery();
-            }
+                using (var validate = connection.CreateCommand())
+                {
+                    // Verifica se ja existe uma mensagem com o mesmo From, To e MessageText (por motivos de teste os dois estão na mesma maquina logo a db é igual e isso gera duplicidade de mensagens)
+                    validate.CommandText = "SELECT COUNT(*) FROM Messages WHERE \"From\" = $from AND \"To\" = $to AND MessageText = $messageText;";
+                    validate.Parameters.AddWithValue("$from", from);
+                    validate.Parameters.AddWithValue("$to", to);
+                    validate.Parameters.AddWithValue("$messageText", messageText);
+                    long count = (long)validate.ExecuteScalar();
+                    if (count > 0)
+                    {
+                        // Se já existe, não insere novamente
+                        return;
+                    }
 
-            // Fecha a conexão
-            connection.Close();
+                }
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                    INSERT INTO Messages (""From"", ""To"", MessageText)
+                    VALUES ($from, $to, $messageText);";
+                    cmd.Parameters.AddWithValue("$from", from);
+                    cmd.Parameters.AddWithValue("$to", to);
+                    cmd.Parameters.AddWithValue("$messageText", messageText);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Fecha a conexão
+                connection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao criar mensagem: {ex.Message}");
+                // Aqui você pode tratar o erro de forma mais específica, se necessário
+            }
         }
 
         // Busca mensagens por To
         public List<MessageDataClient> GetMessages(SqliteConnection connection, string username)
         {
-            var messages = new List<MessageDataClient>();
-            using (var cmd = connection.CreateCommand())
+            try
             {
-                cmd.CommandText = "SELECT * FROM Messages WHERE To = $username ORDER BY Timestamp;";
-                cmd.Parameters.AddWithValue("$username", username);
-                using (var reader = cmd.ExecuteReader())
+                var messages = new List<MessageDataClient>();
+                using (var cmd = connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    cmd.CommandText = "SELECT * FROM Messages WHERE \"From\" = $username ORDER BY Timestamp;";
+                    cmd.Parameters.AddWithValue("$username", username);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        messages.Add(new MessageDataClient
+                        while (reader.Read())
                         {
-                            Id = reader.GetInt32(0),
-                            From = reader.GetString(1),
-                            To = reader.GetString(2),
-                            MessageText = reader.GetString(3),
-                            Timestamp = reader.GetDateTime(4)
-                        });
+                            messages.Add(new MessageDataClient
+                            {
+                                Id = reader.GetInt32(0),
+                                From = reader.GetString(1),
+                                To = reader.GetString(2),
+                                MessageText = reader.GetString(3),
+                                Timestamp = reader.GetDateTime(4)
+                            });
+                        }
                     }
                 }
-            }
 
-            // Fecha a conexão
-            connection.Close();
-            return messages;
+                // Fecha a conexão
+                connection.Close();
+                return messages;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao buscar mensagens: {ex.Message}");
+                // Aqui você pode tratar o erro de forma mais específica, se necessário
+                return new List<MessageDataClient>();
+            }
         }
 
         // Crud Friend
         public void CreateFriend(SqliteConnection connection, string username, string selfUsername, string uniqueId, string publicKey)
         {
-            using (var cmd = connection.CreateCommand())
+            try
             {
-                cmd.CommandText = @"
-                    INSERT INTO Friends (Username, SelfUsername, UniqueId, PublicKey)
-                    VALUES ($username, $selfUsername, $uniqueId, $publicKey);";
-                cmd.Parameters.AddWithValue("$username", username);
-                cmd.Parameters.AddWithValue("$selfUsername", selfUsername);
-                cmd.Parameters.AddWithValue("$uniqueId", uniqueId);
-                cmd.Parameters.AddWithValue("$publicKey", publicKey);
-                cmd.ExecuteNonQuery();
+                using (var cmd = connection.CreateCommand())
+                {
+                    // se existe um registro com os mesmos dados na mesma ordem, não insere
+                    /*
+                     Exemplo se username = "amigo1", selfUsername = "eu", uniqueId = "12345" e publicKey = "chavePublica"
+                    e já existe um registro com esses mesmos dados, não insere novamente simplesmente ignora a inserção.
+                     */
+
+                    // Validar se já existe um amigo com o mesmo username e selfUsername na ordem recebida
+                    // Verifica se já existe
+                    cmd.CommandText = "SELECT COUNT(*) FROM Friends WHERE Username = $username AND SelfUsername = $selfUsername;";
+                    cmd.Parameters.AddWithValue("$username", username);
+                    cmd.Parameters.AddWithValue("$selfUsername", selfUsername);
+                    long count = (long)cmd.ExecuteScalar();
+
+                    if (count > 0)
+                    {
+                        return;
+                    }
+
+                    using (var insertCmd = connection.CreateCommand())
+                    {
+                        insertCmd.CommandText = @"
+                            INSERT INTO Friends (Username, SelfUsername, UniqueId, PublicKey)
+                            VALUES ($username, $selfUsername, $uniqueId, $publicKey);";
+                        insertCmd.Parameters.AddWithValue("$username", username);
+                        insertCmd.Parameters.AddWithValue("$selfUsername", selfUsername);
+                        insertCmd.Parameters.AddWithValue("$uniqueId", uniqueId);
+                        insertCmd.Parameters.AddWithValue("$publicKey", publicKey);
+                        insertCmd.ExecuteNonQuery();
+                    }
+                }
+                // Fecha a conexão
+                connection.Close();
             }
-            // Fecha a conexão
-            connection.Close();
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao criar amigo: {ex.Message}");
+                // Aqui você pode tratar o erro de forma mais específica, se necessário
+            }
         }
 
         public List<Friend> GetFriends(SqliteConnection connection, string selfUsername)
         {
-            var friends = new List<Friend>();
-            using (var cmd = connection.CreateCommand())
+            try
             {
-                cmd.CommandText = "SELECT * FROM Friends WHERE SelfUsername = $selfUsername;";
-                cmd.Parameters.AddWithValue("$selfUsername", selfUsername);
-                using (var reader = cmd.ExecuteReader())
+                var friends = new List<Friend>();
+                using (var cmd = connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    cmd.CommandText = "SELECT * FROM Friends WHERE SelfUsername = $selfUsername;";
+                    cmd.Parameters.AddWithValue("$selfUsername", selfUsername);
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        friends.Add(new Friend
+                        while (reader.Read())
                         {
-                            Username = reader.GetString(0),
-                            SelfUsername = reader.GetString(1),
-                            UniqueId = reader.GetString(2),
-                            PublicKey = reader.GetString(3),
-                            CreatedAt = reader.GetDateTime(4)
-                        });
+                            friends.Add(new Friend
+                            {
+                                Username = reader.GetString(0),
+                                SelfUsername = reader.GetString(1),
+                                UniqueId = reader.GetString(2),
+                                PublicKey = reader.GetString(3),
+                                CreatedAt = reader.GetDateTime(4)
+                            });
+                        }
                     }
                 }
+                // Fecha a conexão
+                connection.Close();
+                return friends;
             }
-            // Fecha a conexão
-            connection.Close();
-            return friends;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao buscar amigos: {ex.Message}");
+                // Aqui você pode tratar o erro de forma mais específica, se necessário
+                return new List<Friend>();
+            }
+        }
+
+        public bool UpdateFriendPubKey(string publicKey, string username)
+        {
+            try
+            {
+                using (var connection = CreateConnection())
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "UPDATE Friends SET PublicKey = $publicKey WHERE Username = $username;";
+                    cmd.Parameters.AddWithValue("$publicKey", publicKey);
+                    cmd.Parameters.AddWithValue("$username", username);
+                    int rowsAffected = cmd.ExecuteNonQuery();
+                    return rowsAffected > 0; // Retorna true se a atualização foi bem-sucedida
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao atualizar chave pública do amigo: {ex.Message}");
+                return false; // Retorna false em caso de erro
+            }
         }
     }
 }

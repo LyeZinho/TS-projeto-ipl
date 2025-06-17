@@ -11,8 +11,6 @@ namespace api.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-            // Aqui você pode implementar a lógica para obter informações do usuário
-            // Por exemplo, retornar uma lista de usuários ou detalhes de um usuário específico
             return Ok("User endpoint is working.");
         }
 
@@ -113,9 +111,6 @@ namespace api.Controllers
 
         // Busca as informaçõs do usuario e retorna o usuário
         // Deve ser chamado com o sessionid do usuário
-        // E informações pessoais do usuário devem ser suprimidas por <privateinfo>
-        // são elas: passwordHash, PrivateKey, PrivateKeyEncrypted, Salt, 
-        // PublicKeyEncrypted, PublicKey ñão deve ser encriptada ja que não é uma informação sensível 
         /*
         public class UserModel
         public string Username { get; set; }
@@ -146,17 +141,16 @@ namespace api.Controllers
             {
                 return NotFound("User not found.");
             }
-            // Retorna o usuário com informações sensíveis suprimidas
             return Ok(new
             {
                 user.Username,
                 user.PublicKey,
                 user.UniqueId,
-                PrivateKey = "<privateinfo>",
-                PublicKeyEncrypted = "<privateinfo>",
-                PrivateKeyEncrypted = "<privateinfo>",
-                Salt = "<privateinfo>",
-                PasswordHash = "<privateinfo>"
+                PrivateKey = user.GetPrivateKey(),
+                PublicKeyEncrypted = user.GetPublicKeyEncrypted(),
+                PrivateKeyEncrypted = user.GetPrivateKeyEncrypted(),
+                Salt = user.GetSalt(),
+                PasswordHash = user.GetPasswordHash()
             });
         }
 
@@ -181,6 +175,28 @@ namespace api.Controllers
                 session.Username,
                 session.UniqueId,
                 session.PublicKey
+            });
+        }
+
+
+        // Busca a public key de um usuario por nome
+        [HttpGet("getpublickey")]
+        public IActionResult GetPublicKey([FromQuery] string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return BadRequest("Username is required.");
+            }
+            // Obtém o usuário pelo nome de usuário
+            var user = UserModel.GetUserByUsername(username);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+            // Retorna a chave pública do usuário
+            return Ok(new
+            {
+                user.PublicKey
             });
         }
     }

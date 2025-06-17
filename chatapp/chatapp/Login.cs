@@ -80,11 +80,11 @@ namespace chatapp
                     "username":"exemplo_usuario",
                     "publicKey":"chave_publica_em_texto_base64",
                     "uniqueId":"7881fb52-e7d7-4566-907a-789893f99915",
-                    "privateKey":"<privateinfo>",
-                    "publicKeyEncrypted":"<privateinfo>",
-                    "privateKeyEncrypted":"<privateinfo>",
-                    "salt":"<privateinfo>",
-                    "passwordHash":"<privateinfo>"}
+                    "privateKey":"...",
+                    "publicKeyEncrypted":"...",
+                    "privateKeyEncrypted":"...",
+                    "salt":"...",
+                    "passwordHash":"..."}
                      */
 
                     using JsonDocument doc = JsonDocument.Parse(responseData);
@@ -95,8 +95,6 @@ namespace chatapp
                         .SetPublicKey(root.GetProperty("publicKey").GetString())
                         .SetUniqueId(root.GetProperty("uniqueId").GetString())
                         .SetPrivateKey(root.GetProperty("privateKey").GetString()) // Pode ser <privateinfo> se não for necessário
-                        .SetPublicKeyEncrypted(root.GetProperty("publicKeyEncrypted").GetString()) // Pode ser <privateinfo> se não for necessário
-                        .SetPrivateKeyEncrypted(root.GetProperty("privateKeyEncrypted").GetString()) // Pode ser <privateinfo> se não for necessário
                         .SetSalt(root.GetProperty("salt").GetString()) // Pode ser <privateinfo> se não for necessário
                         .SetPasswordHash(root.GetProperty("passwordHash").GetString()); // Pode ser <privateinfo> se não for necessário
                     return user;

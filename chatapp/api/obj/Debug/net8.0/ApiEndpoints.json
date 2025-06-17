@@ -11,6 +11,22 @@
   },
   {
     "ContainingType": "api.Controllers.UserController",
+    "Method": "GetPublicKey",
+    "RelativePath": "User/getpublickey",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "username",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "api.Controllers.UserController",
     "Method": "GetUser",
     "RelativePath": "User/getuser",
     "HttpMethod": "GET",

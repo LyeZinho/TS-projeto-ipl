@@ -16,6 +16,7 @@ using chatapp.data;
 using static ProtoIP.Common.Network;
 using System.Data.Entity;
 using System.Xml;
+using Microsoft.Data.Sqlite;
 
 namespace chatapp
 {
@@ -28,11 +29,15 @@ namespace chatapp
         private User user;
         private DbSetup dbSetup = new DbSetup(DbSetup.CreateConnection());
         private List<Friend> friendsList = new List<Friend>();
+        private string SelectedFriend { get; set; } = string.Empty;
 
         public Chat(User user)
         {
             InitializeComponent();
-            this.user = user;
+
+            this.user = user.Username == null ? throw new ArgumentNullException(nameof(user)) : user; // Verifica se o usuário é nulo
+
+            this.Text = $"Chat - {user.Username}"; // Define o título da janela com o nome do usuário
 
             protocol = new ProtocolSI();
             helper = new SerializationHelper();
@@ -44,26 +49,89 @@ namespace chatapp
         {
             friendsList = dbSetup.GetFriends(DbSetup.CreateConnection(), user.Username);
 
-            // Adciona os amigos na lista de amigos (lb_FriendList)
+            // Carrega a lista de amigos na ListBox (valida se tem amigos repetidos (não adiciona amigos repetidos))
+            lb_FriendList.Items.Clear(); // Limpa a lista de amigos antes de carregar novos amigos
             foreach (var friend in friendsList)
             {
-                lb_FriendList.Items.Add(friend.Username);
+                if (!lb_FriendList.Items.Contains(friend.Username))
+                {
+                    lb_FriendList.Items.Add(friend.Username);
+                }
+            }
+        }
+
+        public string FriendPubKey(string friendUsername)
+        {
+            // Isto é um metodo alternativo (ja que o existente não funciona) Faz um pedido a api com endpoint getpublickey
+            // endpoint: 'https://localhost:7016/User/getpublickey?username=<username>'
+            /*
+             Retorna:
+            Response body
+
+            {
+              "publicKey": "MIIBCgKCAQEAsclH3e36agg82F8gbYlc30SvVRr5KHAUjz9TZ+6fDFen7mX7DUc7aOp67v4W+UnHvMUCkVM4+pO75mqESyym6xvUYWEFUDAhCbZ5ZfHPHLEkuwPdQKwtTU3u/0lzOsfOxOwRBkbkpUyhHPw+UfCgeSPJO5R/RvZaM+cFDYwHz3COwm441DkUdaFuM8BpSyvb/udvj9EecHuUoGWu9qJEAggk8shfRHWeWNlWfkJ2h83P8e9cCxnsaBC2S48FGNjBgMjP6q8gS1/Sup+9d/aXnRCJKlsFWHfwjwoMhHYUgqyiBimz3BK8yF3v+iAOYUv6eboHeWQzVcXEUtlFczCA1QIDAQAB"
+            }
+             */
+            if (string.IsNullOrEmpty(friendUsername)) return string.Empty;
+            try
+            {
+                // Faz uma requisição HTTP GET para obter a chave pública do amigo
+                using (var client = new HttpClient())
+                {
+                    string url = $"https://localhost:7016/User/getpublickey?username={friendUsername}";
+                    var response = client.GetAsync(url).Result;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonResponse = response.Content.ReadAsStringAsync().Result;
+                        var publicKeyData = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonResponse);
+                        return publicKeyData["publicKey"];
+                    }
+                    else
+                    {
+                        AddMessage($"Erro ao obter a chave pública do amigo: {response.ReasonPhrase}");
+                        return string.Empty;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AddMessage($"Erro ao obter a chave pública do amigo: {ex.Message}");
+                return string.Empty;
             }
         }
 
         private void LoadUserMsg(string username)
         {
             // Carrega as mensagens do usuário especificado
-            List<MessageDataClient> messages = dbSetup.GetMessages(DbSetup.CreateConnection(), username);
-            rtb_MessageBoxList.Clear(); // Limpa a caixa de mensagens antes de carregar novas mensagens
-            foreach (var message in messages)
+            // Carrega as mensagens que foram enviadas para o usuário especificado
+            // Merge as duas listas de mensagens evitando duplicar dados
+            /*
+             Explicação:
+                As mensagens são organizadas por From e To, onde From é o remetente e To é o destinatário.
+                porem o get messages pesquisa apenas por From, então é necessário fazer uma pesquisa por To também no caso de ser as mensagens enviadas pelo cliente atual.
+             Assim, as mensagens são carregadas tanto as enviadas quanto as recebidas.
+             */
+            if (string.IsNullOrEmpty(username)) return;
+            
+            List<MessageDataClient> messagesFrom = dbSetup.GetMessages(DbSetup.CreateConnection(), username);
+            List<MessageDataClient> messagesTo = dbSetup.GetMessages(DbSetup.CreateConnection(), this.user.Username);
+
+            // Merge as duas listas de mensagens evitando duplicar dados
+            var allMessages = messagesFrom.Concat(messagesTo)
+                .GroupBy(m => new { m.From, m.To, m.MessageText, m.Timestamp })
+                .Select(g => g.First())
+                .OrderBy(m => m.Timestamp);
+
+            rtb_MessageBoxList.Clear(); // Limpa o chat antes de carregar novas mensagens
+
+            foreach (var message in allMessages)
             {
-                string messageText = $"{message.Timestamp.ToString("HH:mm:ss")} - {message.From}: {message.MessageText}";
-                if (!string.IsNullOrEmpty(message.To))
+                string formattedMessage = $"{message.Timestamp:HH:mm:ss} - {message.From}: {message.MessageText}";
+                if (!string.IsNullOrEmpty(message.To) && message.To != user.Username)
                 {
-                    messageText += $" (para: {message.To})";
+                    formattedMessage += $" (para: {message.To})";
                 }
-                rtb_MessageBoxList.AppendText(messageText + "\n");
+                rtb_MessageBoxList.AppendText(formattedMessage + "\n");
             }
         }
 
@@ -92,12 +160,27 @@ namespace chatapp
 
                                     if (messageData != null)
                                     {
+
+
+                                        // Decifra a mensagem recebida usando a chave privada do usuário atual
+                                        messageData.Message = Encript.DecryptMessage(
+                                            messageData.Message,
+                                            this.user.GetPrivateKey()
+                                        );
+
+                                        // Adiciona a mensagem ao banco de dados local
+                                        dbSetup.CreateMessage(
+                                            DbSetup.CreateConnection(),
+                                            messageData.From,
+                                            messageData.To,
+                                            messageData.Message
+                                        );
                                         string message = $"{messageData.From}: {messageData.Message}";
                                         if (!string.IsNullOrEmpty(messageData.To))
                                         {
                                             message += $" (para: {messageData.To})";
                                         }
-                                        AddMessage(message);
+                                        AddMessage(messageData.Message);
                                     }
                                     else
                                     {
@@ -114,17 +197,23 @@ namespace chatapp
                                 // Processa a solicitação de amizade recebida
                                 try
                                 {
+                                    // Deserializa o JSON da solicitação de amizade
                                     var json = ((JsonElement)payload.Data).GetRawText();
-                                    var friendRequestData = JsonSerializer.Deserialize<FriendRequestData>(
+
+                                    // Tenta deserializar o JSON para um objeto FriendRequestData
+                                    var friendRequestData = JsonSerializer.Deserialize<
+                                        FriendRequestData>(
                                         json,
                                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                                     );
+
+                                    // Se a deserialização for bem-sucedida, processa a solicitação de amizade
                                     if (friendRequestData != null)
                                     {
                                         string message = $"{friendRequestData.From} enviou uma solicitação de amizade.";
                                         AddMessage(message);
-                                        // Aqui você pode implementar a lógica para aceitar ou rejeitar a solicitação
-                                        // Por exemplo, abrir um diálogo para o usuário aceitar/rejeitar
+
+                                        // Processa a solicitação de amizade
                                         FriendRequest(
                                             friendRequestData.From,
                                             this.user.Username,
@@ -148,18 +237,25 @@ namespace chatapp
                                 // Processa a resposta à solicitação de amizade
                                 try
                                 {
+                                    // Deserializa o JSON da resposta de amizade
                                     var json = ((JsonElement)payload.Data).GetRawText();
                                     var friendReplyData = JsonSerializer.Deserialize<FriendReplyData>(
                                         json,
                                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                                     );
-                                    if (friendReplyData != null)
+                                    if (friendReplyData != null )
                                     {
                                         string message = $"{friendReplyData.From} {(friendReplyData.Accepted ? "aceitou" : "rejeitou")} sua solicitação de amizade.";
                                         AddMessage(message);
                                         if (friendReplyData.Accepted)
                                         {
-                                            // Aqui você pode adicionar lógica para adicionar o amigo à lista de amigos
+                                            FriendReply(
+                                                friendReplyData.To,
+                                                friendReplyData.From,
+                                                friendReplyData.Accepted,
+                                                friendReplyData.SelfPublicKey,
+                                                String.IsNullOrEmpty(friendReplyData.UniqueId) ? Guid.NewGuid().ToString() : friendReplyData.UniqueId
+                                            );
                                         }
                                     }
                                     else
@@ -194,7 +290,7 @@ namespace chatapp
         {
             // Abre um diálogo com dois botões: Aceitar e Rejeitar
             DialogResult result = MessageBox.Show(
-                $"{targetUsername} Recebeu uma solicitação de amizade. Aceitar?",
+                $"{selfUsername} Recebeu uma solicitação de amizade. de {targetUsername}. Aceitar?",
                 "Solicitação de Amizade",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question
@@ -217,6 +313,26 @@ namespace chatapp
                     Data = friendReplyData,
                     Timestamp = DateTime.UtcNow.ToString("o")
                 };
+
+                // Adciona o amigo na db local 
+                //public void CreateFriend(SqliteConnection connection, string username, string selfUsername, string uniqueId, string publicKey)
+                dbSetup.CreateFriend(
+                    DbSetup.CreateConnection(),
+                    targetUsername, // Usuário que enviou a solicitação
+                    selfUsername, // Usuário que está aceitando a solicitação
+                    user.UniqueId, // ID único da solicitação de amizade
+                    selfPublicKey // Chave pública do usuário que está aceitando
+                );
+
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(new Action(() => this.LoadChat()));
+                }
+                else
+                {
+                    this.LoadChat();
+                }
+
                 byte[] packet = protocol.Make(ProtocolSICmdType.DATA, helper.PayloadToByte(payload));
                 stream.Write(packet, 0, packet.Length);
                 AddMessage($"Você aceitou a solicitação de amizade de {targetUsername}.");
@@ -266,12 +382,21 @@ namespace chatapp
             {
                 dbSetup.CreateFriend(
                     DbSetup.CreateConnection(),
-                    selfUsername, // Usuário que está aceitando a solicitação
                     targetUsername, // Usuário que enviou a solicitação
-                    selfPublicKey, // Chave pública do usuário que está aceitando
-                    uniqueid // ID único da solicitação de amizade
+                    selfUsername, // Usuário que está aceitando a solicitação
+                    uniqueid, // ID único da solicitação de amizade
+                    selfPublicKey // Chave pública do usuário que está aceitando
                 );
                 AddMessage($"Você adicionou {targetUsername} como amigo.");
+
+                if (this.InvokeRequired)
+                {
+                    this.Invoke(new Action(() => this.LoadChat()));
+                }
+                else
+                {
+                    this.LoadChat();
+                }
             }
             else
             {
@@ -279,7 +404,7 @@ namespace chatapp
             }
         }
 
-        private void FriendRequest(string targetUsername, string selfUsername, string selfPublickey, string uniqueid)
+        private void SendFriendRequest(string targetUsername, string selfUsername, string selfPublickey, string uniqueid)
         {
             // Envia uma solicitação de amizade para o usuário especificado
             var friendRequestData = new
@@ -339,7 +464,6 @@ namespace chatapp
             if (InvokeRequired)
             {
                 Invoke(new Action<string>(AddMessage), message);
-                //dbSetup.CreateMessage(DbSetup.CreateConnection(), this.user.Username, toMessage.Text.Trim(), message);
             }
             else
             {
@@ -349,13 +473,37 @@ namespace chatapp
 
         private void btn_SendMessage_Click(object sender, EventArgs e)
         {
-            string messageText = textBox1.Text.Trim();
-            if (string.IsNullOrEmpty(messageText)) return;
+            string messageTextRaw = textBox1.Text.Trim();
+            if (string.IsNullOrEmpty(messageTextRaw)) return;
+
+            // Encripta a mensagem antes de enviá-la
+
+            //1. Busca o amigo selecionado na lista de amigos
+            if (string.IsNullOrEmpty(SelectedFriend))
+            {
+                MessageBox.Show("Por favor, selecione um amigo para enviar a mensagem.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            
+            Friend friend = friendsList.FirstOrDefault(f => f.Username == SelectedFriend);
+
+            if (friend == null)
+            {
+                MessageBox.Show("Amigo selecionado não encontrado.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Adciona o prefixo do usuário para identificar quem enviou a mensagem ex: (username) Mensagem
+            messageTextRaw = $"({this.user.Username}) {messageTextRaw}";
+
+            //2. Encripta a mensagem usando a chave pública do amigo selecionado
+            string messageText = Encript.EncryptMessage(messageTextRaw, FriendPubKey(friend.Username));
+
             var messageData = new MessageData
             {
                 From = this.user.Username,
                 Message = messageText,
-                //To = toMessage.Text.Trim(),
+                To = SelectedFriend,
             };
             var payload = new Payload
             {
@@ -363,6 +511,18 @@ namespace chatapp
                 Data = messageData,
                 Timestamp = DateTime.UtcNow.ToString("o")
             };
+
+            // Adiciona a mensagem ao banco de dados local
+            dbSetup.CreateMessage(
+                DbSetup.CreateConnection(), 
+                this.user.Username, 
+                SelectedFriend, 
+                messageTextRaw
+                );
+
+            // Adciona a mensagem ao historico
+            AddMessage(messageTextRaw);
+
             byte[] packet = protocol.Make(ProtocolSICmdType.DATA, helper.PayloadToByte(payload));
             stream.Write(packet, 0, packet.Length);
             textBox1.Clear();
@@ -382,8 +542,14 @@ namespace chatapp
                     if (!string.IsNullOrEmpty(friendName))
                     {
                         // Envia a solicitação de amizade
+                        // private void SendFriendRequest(string targetUsername, string selfUsername, string selfPublickey, string uniqueid)
                         User user = dbSetup.GetUser(connection: DbSetup.CreateConnection(), this.user.Username);
-                        FriendRequest(friendName, user.Username, user.GetPublicKey(), user.UniqueId);
+                        SendFriendRequest(
+                            friendName, 
+                            user.Username, 
+                            user.GetPublicKey(), 
+                            user.UniqueId
+                        );
                         AddMessage($"Pedido de amizade enviado para {friendName}.");
                         addFriendDialog.Close();
                     }
@@ -403,11 +569,11 @@ namespace chatapp
             // Quando um amigo é selecionado na lista, limpa o chat e carrega as mensagens desse amigo.
             if (lb_FriendList.SelectedItem != null)
             {
-                string selectedFriend = lb_FriendList.SelectedItem.ToString();
+                //string selectedFriend = lb_FriendList.SelectedItem.ToString();
+                this.SelectedFriend = lb_FriendList.SelectedItem.ToString();
                 rtb_MessageBoxList.Clear();
-                LoadUserMsg(selectedFriend); // Carrega as mensagens do amigo selecionado
+                LoadUserMsg(this.SelectedFriend);
             }
         }
-
     }
 }

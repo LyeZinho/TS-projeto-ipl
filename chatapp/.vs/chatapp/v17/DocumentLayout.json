@@ -3,8 +3,28 @@
   "WorkspaceRootPath": "E:\\git\\TS-projeto-ipl\\chatapp\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B5A1040D-1C22-436D-A68E-F973EE75A732}|chatapp\\chatapp.csproj|e:\\git\\ts-projeto-ipl\\chatapp\\chatapp\\chatapp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{B5A1040D-1C22-436D-A68E-F973EE75A732}|chatapp\\chatapp.csproj|solutionrelative:chatapp\\chatapp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{469676BB-0DAE-4409-9770-C2E325293B53}|api\\api.csproj|e:\\git\\ts-projeto-ipl\\chatapp\\api\\models\\validationsessionmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{469676BB-0DAE-4409-9770-C2E325293B53}|api\\api.csproj|solutionrelative:api\\models\\validationsessionmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{469676BB-0DAE-4409-9770-C2E325293B53}|api\\api.csproj|e:\\git\\ts-projeto-ipl\\chatapp\\api\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{469676BB-0DAE-4409-9770-C2E325293B53}|api\\api.csproj|solutionrelative:api\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B5A1040D-1C22-436D-A68E-F973EE75A732}|chatapp\\chatapp.csproj|e:\\git\\ts-projeto-ipl\\chatapp\\chatapp\\chat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B5A1040D-1C22-436D-A68E-F973EE75A732}|chatapp\\chatapp.csproj|solutionrelative:chatapp\\chat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B5A1040D-1C22-436D-A68E-F973EE75A732}|chatapp\\chatapp.csproj|e:\\git\\ts-projeto-ipl\\chatapp\\chatapp\\data\\dbsetup.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B5A1040D-1C22-436D-A68E-F973EE75A732}|chatapp\\chatapp.csproj|solutionrelative:chatapp\\data\\dbsetup.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B5A1040D-1C22-436D-A68E-F973EE75A732}|chatapp\\chatapp.csproj|E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\chat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{B5A1040D-1C22-436D-A68E-F973EE75A732}|chatapp\\chatapp.csproj|solutionrelative:chatapp\\chat.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     }
   ],
   "DocumentGroupContainers": [
@@ -19,15 +39,75 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "chatapp",
+              "DocumentMoniker": "E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\chatapp.csproj",
+              "RelativeDocumentMoniker": "chatapp\\chatapp.csproj",
+              "ToolTip": "E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\chatapp.csproj",
+              "RelativeToolTip": "chatapp\\chatapp.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-06-16T23:01:38.453Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "DbSetup.cs",
+              "DocumentMoniker": "E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\data\\DbSetup.cs",
+              "RelativeDocumentMoniker": "chatapp\\data\\DbSetup.cs",
+              "ToolTip": "E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\data\\DbSetup.cs",
+              "RelativeToolTip": "chatapp\\data\\DbSetup.cs",
+              "ViewState": "AgIAAGYAAAAAAAAAAADgv20AAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-16T15:21:38.892Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ValidationSessionModel.cs",
+              "DocumentMoniker": "E:\\git\\TS-projeto-ipl\\chatapp\\api\\Models\\ValidationSessionModel.cs",
+              "RelativeDocumentMoniker": "api\\Models\\ValidationSessionModel.cs",
+              "ToolTip": "E:\\git\\TS-projeto-ipl\\chatapp\\api\\Models\\ValidationSessionModel.cs",
+              "RelativeToolTip": "api\\Models\\ValidationSessionModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACYAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-16T15:19:46.636Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "UserController.cs",
+              "DocumentMoniker": "E:\\git\\TS-projeto-ipl\\chatapp\\api\\Controllers\\UserController.cs",
+              "RelativeDocumentMoniker": "api\\Controllers\\UserController.cs",
+              "ToolTip": "E:\\git\\TS-projeto-ipl\\chatapp\\api\\Controllers\\UserController.cs",
+              "RelativeToolTip": "api\\Controllers\\UserController.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAIAwwA0AAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-16T15:19:42.692Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Chat.cs [Design]",
+              "DocumentMoniker": "E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\Chat.cs",
+              "RelativeDocumentMoniker": "chatapp\\Chat.cs",
+              "ToolTip": "E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\Chat.cs [Design]",
+              "RelativeToolTip": "chatapp\\Chat.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-16T10:39:23.874Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "Chat.cs",
               "DocumentMoniker": "E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\Chat.cs",
               "RelativeDocumentMoniker": "chatapp\\Chat.cs",
               "ToolTip": "E:\\git\\TS-projeto-ipl\\chatapp\\chatapp\\Chat.cs",
               "RelativeToolTip": "chatapp\\Chat.cs",
-              "ViewState": "AgIAAFsAAAAAAAAAAAAYwIsAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAJEAAAAAAAAAAAASwJ4AAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-13T15:30:11.384Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-13T15:30:11.384Z"
             }
           ]
         }

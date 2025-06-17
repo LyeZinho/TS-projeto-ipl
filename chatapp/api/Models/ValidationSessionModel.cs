@@ -36,8 +36,6 @@ namespace api.Models
         // Método para validar a sessão
         public bool IsValid()
         {
-            // Aqui você pode implementar a lógica de validação da sessão
-            // Por exemplo, verificar se o SessionId é válido ou se o UniqueId corresponde ao usuário
             return !string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(UniqueId) && !string.IsNullOrEmpty(SessionId);
         }
 

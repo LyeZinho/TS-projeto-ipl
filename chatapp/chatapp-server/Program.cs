@@ -5,6 +5,7 @@ using System.Threading;
 using EI.SI;
 using chatlib;
 using System.Text.Json;
+using System.IO;
 
 
 class Server
@@ -34,6 +35,17 @@ class Server
         }
     }
 
+    public void WriteLog(string message)
+    {
+        // Escreve um fichero de log com a data e hora
+        var logMessage = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] - {message}";
+        using (var writer = new StreamWriter("server.log", true))
+        {
+            writer.WriteLine(logMessage);
+        }
+        Console.WriteLine(logMessage);
+    }
+
     private void HandleClient(TcpClient client)
     {
         var stream = client.GetStream();
@@ -45,13 +57,15 @@ class Server
                 int bytesRead = stream.Read(protocol.Buffer, 0, protocol.Buffer.Length);
                 if (bytesRead == 0)
                 {
-                    Console.WriteLine("Conexão fechada pelo cliente.");
+                    //Console.WriteLine("Conexão fechada pelo cliente.");
+                    WriteLog("Conexão fechada pelo cliente: " + client.Client.RemoteEndPoint);
                     break;
                 }
 
                 if (protocol.GetCmdType() == ProtocolSICmdType.DATA)
                 {
-                    Console.WriteLine("Recebido: " + protocol.GetStringFromData());
+                    //Console.WriteLine("Recebido: " + protocol.GetStringFromData());
+                    WriteLog("Recebido: " + protocol.GetStringFromData());
                     var payload = helper.ByteToPayload(protocol.GetData());
                     try
                     {
@@ -59,7 +73,8 @@ class Server
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Erro ao processar payload: " + ex.Message);
+                        //Console.WriteLine("Erro ao processar payload: " + ex.Message);
+                        WriteLog("Erro ao processar payload: " + ex.Message);
                     }
                 }
                 else if (protocol.GetCmdType() == ProtocolSICmdType.EOT)
@@ -72,7 +87,8 @@ class Server
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Erro no cliente: " + ex.Message);
+            //Console.WriteLine("Erro no cliente: " + ex.Message);
+            WriteLog("Erro no cliente: " + ex.Message);
         }
         finally
         {
@@ -96,18 +112,22 @@ class Server
                 HandleMessage(payload);
                 break;
             case TypePayload.FRIENDREQUEST:
-                Console.WriteLine("Solicitação de amizade recebida: " + payload.Data);
+                //Console.WriteLine("Solicitação de amizade recebida: " + payload.Data);
+                WriteLog("Solicitação de amizade recebida: " + payload.Data);
                 HandleFriendRequest(payload);
                 break;
             case TypePayload.FRIENDREPLY:
-                Console.WriteLine("Resposta à solicitação de amizade recebida: " + payload.Data);
+                //Console.WriteLine("Resposta à solicitação de amizade recebida: " + payload.Data);
+                WriteLog("Resposta à solicitação de amizade recebida: " + payload.Data);
                 HandleFriendReply(payload);
                 break;
             case TypePayload.ACK:
-                Console.WriteLine("ACK recebido: " + payload.Data);
+                //Console.WriteLine("ACK recebido: " + payload.Data);
+                WriteLog("ACK recebido: " + payload.Data);
                 break;
             case TypePayload.EOT:
-                Console.WriteLine("Fim de transmissão recebido.");
+                //Console.WriteLine("Fim de transmissão recebido.");
+                WriteLog("Fim de transmissão recebido.");
                 break;
 
         }
@@ -143,11 +163,13 @@ class Server
         if (stream.CanWrite)
         {
             stream.Write(respBytes, 0, respBytes.Length);
-            Console.WriteLine($"[INFO] Usuário {user.Username} ({user.UniqueId}) conectado.");
+            //Console.WriteLine($"[INFO] Usuário {user.Username} ({user.UniqueId}) conectado.");
+            WriteLog($"[INFO] Usuário {user.Username} ({user.UniqueId}) conectado.");
         }
         else
         {
-            Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {user.UniqueId}.");
+            //Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {user.UniqueId}.");
+            WriteLog($"[ERRO] Não foi possível escrever no stream de {user.UniqueId}.");
         }
     }
 
@@ -161,7 +183,8 @@ class Server
 
         if (sender == null || recipient == null)
         {
-            Console.WriteLine("Remetente ou destinatário não encontrado.");
+            //Console.WriteLine("Remetente ou destinatário não encontrado.");
+            WriteLog("Remetente ou destinatário não encontrado.");
             return;
         }
 
@@ -180,7 +203,8 @@ class Server
             if (rs.CanWrite)
             {
                 rs.Write(respBytes, 0, respBytes.Length);
-                Console.WriteLine($"Mensagem enviada para {recipient.Username}.");
+                //Console.WriteLine($"Mensagem enviada para {recipient.Username}.");
+                WriteLog($"Mensagem enviada para {recipient.Username}.");
             }
         }
     }
@@ -210,7 +234,8 @@ class Server
         var recipient = connections.GetUserByUsername(data.To);
         if (sender == null || recipient == null)
         {
-            Console.WriteLine("Remetente ou destinatário não encontrado.");
+            //Console.WriteLine("Remetente ou destinatário não encontrado.");
+            WriteLog("Remetente ou destinatário não encontrado.");
             return;
         }
         // Envia a solicitação de amizade para o destinatário
@@ -233,16 +258,19 @@ class Server
             if (rs.CanWrite)
             {
                 rs.Write(respBytes, 0, respBytes.Length);
-                Console.WriteLine($"Solicitação de amizade enviada de {data.From} para {data.To}.");
+                //Console.WriteLine($"Solicitação de amizade enviada de {data.From} para {data.To}.");
+                WriteLog($"Solicitação de amizade enviada de {data.From} para {data.To}.");
             }
             else
             {
-                Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {recipient.Username}.");
+                //Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {recipient.Username}.");
+                WriteLog($"[ERRO] Não foi possível escrever no stream de {recipient.Username}.");
             }
         }
         else
         {
-            Console.WriteLine($"[ERRO] Cliente {recipient.Username} não está conectado.");
+            //Console.WriteLine($"[ERRO] Cliente {recipient.Username} não está conectado.");
+            WriteLog($"[ERRO] Cliente {recipient.Username} não está conectado.");
         }
     }
 
@@ -255,23 +283,26 @@ class Server
         var data = JsonSerializer.Deserialize<FriendReplyData>(payload.Data.ToString() ?? string.Empty)
                    ?? throw new InvalidOperationException("Falha ao desserializar dados de resposta à solicitação de amizade.");
 
-        var sender = connections.GetUserByUsername(data.From);
-        var recipient = connections.GetUserByUsername(data.To);
+        var sender = connections.GetUserByUsername(data.To);
+        var recipient = connections.GetUserByUsername(data.From);
 
         if (sender == null || recipient == null)
         {
-            Console.WriteLine("Remetente ou destinatário não encontrado.");
+            //Console.WriteLine("Remetente ou destinatário não encontrado.");
+            WriteLog("Remetente ou destinatário não encontrado.");
             return;
         }
         if (data.Accepted)
         {
             // Adiciona o remetente à lista de amigos do destinatário
             connections.AddFriend(recipient.Username, sender.Username);
-            Console.WriteLine($"Amizade aceita entre {data.From} e {data.To}.");
+            //Console.WriteLine($"Amizade aceita entre {data.From} e {data.To}.");
+            WriteLog($"Amizade aceita entre {data.From} e {data.To}.");
         }
         else
         {
-            Console.WriteLine($"Amizade rejeitada entre {data.From} e {data.To}.");
+            //Console.WriteLine($"Amizade rejeitada entre {data.From} e {data.To}.");
+            WriteLog($"Amizade rejeitada entre {data.From} e {data.To}.");
         }
         // Envia a resposta ao remetente
         var response = new Payload
@@ -279,8 +310,10 @@ class Server
             Type = TypePayload.FRIENDREPLY,
             Data = new
             {
-                from = data.From,
-                to = data.To,
+                // Por algum motivo que só Deus sabe estes dados estão trocados aqui / data.To, data.From
+                // mas no cliente os dados são enviados certo ¯\_(ツ)_/¯
+                from = data.To,
+                to = data.From,
                 accepted = data.Accepted,
                 selfPublicKey = data.SelfPublicKey
             },
@@ -296,11 +329,13 @@ class Server
             if (rs.CanWrite)
             {
                 rs.Write(respBytes, 0, respBytes.Length);
-                Console.WriteLine($"Resposta à solicitação de amizade enviada para {data.From}.");
+                //Console.WriteLine($"Resposta à solicitação de amizade enviada para {data.From}.");
+                WriteLog($"Resposta à solicitação de amizade enviada para {data.From}.");
             }
             else
             {
-                Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {sender.Username}.");
+                //Console.WriteLine($"[ERRO] Não foi possível escrever no stream de {sender.Username}.");
+                WriteLog($"[ERRO] Não foi possível escrever no stream de {sender.Username}.");
             }
         }
     }

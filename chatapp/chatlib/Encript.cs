@@ -11,50 +11,34 @@ namespace chatlib
     {
         // Metodo para gerar um par de chaves RSA para a chave privada e pública
 
-        /*
-         Uso:
-            var (publicKey, privateKey) = Encript.GenerateKeys();
-            var encryptedMessage = Encript.EncryptMessage("Mensagem secreta", publicKey);
-         */
         public static (string PublicKey, string PrivateKey) GenerateKeys()
         {
-            using (var rsa = new System.Security.Cryptography.RSACryptoServiceProvider(2048)) // 2048 bits é um tamanho comum para chaves RSA
+            using (var rsa = RSA.Create())
             {
-                var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey()); // Exporta a chave pública
-                var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey()); // Exporta a chave privada
+                var publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
+                var privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey());
                 return (publicKey, privateKey);
             }
         }
 
-        // Metodo para criptografar uma mensagem usando a chave pública
-        /*
-          Uso:
-            var encryptedMessage = Encript.EncryptMessage("Mensagem secreta", publicKey);
-            var decryptedMessage = Encript.DecryptMessage(encryptedMessage, privateKey);
-         */
         public static string EncryptMessage(string message, string publicKey)
         {
-            using (var rsa = new System.Security.Cryptography.RSACryptoServiceProvider())
+            using (var rsa = RSA.Create())
             {
                 rsa.ImportRSAPublicKey(Convert.FromBase64String(publicKey), out _);
                 var dataToEncrypt = Encoding.UTF8.GetBytes(message);
-                var encryptedData = rsa.Encrypt(dataToEncrypt, System.Security.Cryptography.RSAEncryptionPadding.OaepSHA256);
+                var encryptedData = rsa.Encrypt(dataToEncrypt, RSAEncryptionPadding.OaepSHA256);
                 return Convert.ToBase64String(encryptedData);
             }
         }
 
-        // Metodo para descriptografar uma mensagem usando a chave privada
-        /*
-          Uso:
-            var decryptedMessage = Encript.DecryptMessage(encryptedMessage, privateKey);
-         */
         public static string DecryptMessage(string encryptedMessage, string privateKey)
         {
-            using (var rsa = new System.Security.Cryptography.RSACryptoServiceProvider())
+            using (var rsa = RSA.Create())
             {
                 rsa.ImportRSAPrivateKey(Convert.FromBase64String(privateKey), out _);
                 var dataToDecrypt = Convert.FromBase64String(encryptedMessage);
-                var decryptedData = rsa.Decrypt(dataToDecrypt, System.Security.Cryptography.RSAEncryptionPadding.OaepSHA256);
+                var decryptedData = rsa.Decrypt(dataToDecrypt, RSAEncryptionPadding.OaepSHA256);
                 return Encoding.UTF8.GetString(decryptedData);
             }
         }
